@@ -86,7 +86,7 @@ class Meritev:
         self.task.start()
         data = self.task.read(self.st_vzorcev)
         self.task.stop()
-        exc = data[1]
+        exc = np.array(data[1])
         h = np.array(data[0])*self.las_v/self.U_max
         t = np.linspace(0, self.st_vzorcev/self.frekvenca, self.st_vzorcev)
         print(t[-1])

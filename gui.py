@@ -14,6 +14,7 @@ from pyFRF import FRF
 import pyEMA
 import time
 import concurrent.futures
+import winsound
 
 
 class GUI_MSLK:
@@ -58,10 +59,13 @@ class GUI_MSLK:
                                "ao1": "cDAQ10Mod1/ao1",
                                "ai0": "cDAQ10Mod3/ai0",
                                "ai1": "cDAQ10Mod3/ai1",
+                               "ai2": "cDAQ10Mod3/ai3",
                                "U_max": 4,
                                "U_min": -4,
                                "las_v": 20.0,
                                "zamik laser": 0.00124,
+                               "start silomer/kladivo": True,
+                               "f kladivo": 2.273,
                                "f1": 4.034,
                                "f2": 9.923,
                                "osnovna frekvenca": 13107200,
@@ -95,6 +99,8 @@ class GUI_MSLK:
         self.prikazan_cikelj = 1
         self.prikazano_mesto = 1
         self.load_bar_stop = False
+        self.stop_zajemanje_kladivom = False
+        self.objek_je_mirn = False
 
     # definiranje zavihkov
         tabControl = ttk.Notebook(self.master)
@@ -347,38 +353,58 @@ class GUI_MSLK:
         self.entry_laser_delay.grid(row=5, column=1)
         self.entry_laser_delay.insert(0, self.nastavitve["zamik laser"])
 
-        # nastavitve silomera
+        # nastavitve silomera/kladiva
         frame_silomer_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
         frame_silomer_nastavitve.grid(row=1, column=0)
 
         label_silomer_nastavitve = tk.Label(
-            frame_silomer_nastavitve, text="Nastavitve silomera")
+            frame_silomer_nastavitve, text="Nastavitve silomera / kladiva")
         label_silomer_nastavitve.grid(row=0, column=0, columnspan=2)
 
+        self.nastavitve["start silomer/kladivo"]
+        self.var_silomer = tk.BooleanVar()
+        self.var_silomer.set(self.nastavitve["start silomer/kladivo"])
+        self.cb_silomer = tk.Checkbutton(
+            frame_silomer_nastavitve, text='Silomer', variable=self.var_silomer, command=self.izbran_silomer)
+        self.cb_silomer.grid(row=1, column=0)
+        self.cb_silomer.select()
+
+        self.var_kladivo = tk.BooleanVar()
+        self.var_kladivo.set(not self.nastavitve["start silomer/kladivo"])
+        self.cb_kladivo = tk.Checkbutton(
+            frame_silomer_nastavitve, text='Kladivo', variable=self.var_kladivo, command=self.izbrano_kladivo)
+        self.cb_kladivo.grid(row=1, column=1)
+
+        self.text_kanal_sk = tk.StringVar()
+        self.text_kanal_sk.set("Kanal silomera")
         label_silomer_kanal = tk.Label(
-            frame_silomer_nastavitve, text="Kanal silomera")
-        label_silomer_kanal.grid(row=1, column=0)
+            frame_silomer_nastavitve, textvariable=self.text_kanal_sk)
+        label_silomer_kanal.grid(row=2, column=0)
 
         self.entry_silomer_kanal = tk.Entry(master=frame_silomer_nastavitve)
-        self.entry_silomer_kanal.grid(row=1, column=1)
+        self.entry_silomer_kanal.grid(row=2, column=1)
         self.entry_silomer_kanal.insert(0, self.nastavitve["ai1"])
 
+        self.text_faktor_sk = tk.StringVar()
+        self.text_faktor_sk.set("Faktor silomera [pC/N]")
         label_silomer_fakror1 = tk.Label(
-            frame_silomer_nastavitve, text="Faktor silomera [pC/N]")
-        label_silomer_fakror1.grid(row=2, column=0)
+            frame_silomer_nastavitve, textvariable=self.text_faktor_sk)
+        label_silomer_fakror1.grid(row=3, column=0)
 
         self.entry_silomer_faktor1 = tk.Entry(master=frame_silomer_nastavitve)
-        self.entry_silomer_faktor1.grid(row=2, column=1)
+        self.entry_silomer_faktor1.grid(row=3, column=1)
         self.entry_silomer_faktor1.insert(0, self.nastavitve["f1"])
 
         label_silomer_fakror2 = tk.Label(
             frame_silomer_nastavitve, text="Faktor nabojnega ojačevalnika [mV/pC]")
-        label_silomer_fakror2.grid(row=3, column=0)
+        label_silomer_fakror2.grid(row=4, column=0)
 
         self.entry_silomer_faktor2 = tk.Entry(master=frame_silomer_nastavitve)
-        self.entry_silomer_faktor2.grid(row=3, column=1)
+        self.entry_silomer_faktor2.grid(row=4, column=1)
         self.entry_silomer_faktor2.insert(0, self.nastavitve["f2"])
+
+        self.urejanje_silomer_kladivo()
 
         # nastavitve zajema
         frame_zajem_nastavitve = tk.Frame(
@@ -634,11 +660,11 @@ class GUI_MSLK:
         self.entry_stevilo_ciklov.insert(0, self.nastavitve["število ciklov"])
 
         self.gumb_začni_meritev = tk. Button(
-            frame_gumbi_tab3, text="Začni cikelj meritev", command=self.gui_handler)
+            frame_gumbi_tab3, text="Začni meritev", command=self.gui_handler)
         self.gumb_začni_meritev.grid(row=3, column=0)
 
         self.gumb_prekini_meritev = tk. Button(
-            frame_gumbi_tab3, text="Prekini cikelj", command=self.prekini_meritev)
+            frame_gumbi_tab3, text="Prekini meritev", command=self.prekini_meritev)
         self.gumb_prekini_meritev.grid(row=3, column=1)
 
         self.gumb_doloci_pole = tk. Button(
@@ -718,7 +744,7 @@ class GUI_MSLK:
 
 # ===============================Funkcije=========================================
     def connect(self):
-
+        """funkcija skrbi za vspostavitev povezave z RPi"""
         def real_connect():
 
             if self.povezava_vspostavljena_boolean == False:
@@ -736,7 +762,7 @@ class GUI_MSLK:
                 self.scanner = MSLK.Scanner(
                     pi_kamera, laser, meritev, položaj_zrcal, None)
 
-                # vspostavitev povezave s RPi
+                # vspostavitev povezave z RPi
                 self.scanner.kamera.connect()
                 # kalibracija laserske glave
                 self.kalibracija_laserja()
@@ -751,6 +777,7 @@ class GUI_MSLK:
         threading.Thread(target=real_connect).start()
 
     def disconnect(self):
+        """funkcija za prekinitev povezave z RPi"""
         if self.povezava_vspostavljena_boolean == True:
             self.scanner.kamera.disconnect()
             self.stslabel.configure(text="Povezava na RPi prekinjena")
@@ -760,6 +787,7 @@ class GUI_MSLK:
             self.stslabel.configure(text="Povezava je že prekinjena")
 
     def izračun_možnih_frekvenc(self):
+        """Funkcija izračuna možne frekvence vzorčenja in jih ponudi uporabniku"""
         osnovna = float(self.entry_osnovna_frekvenca.get())
         seznam_frekvenc = []
         for i in range(31):
@@ -773,16 +801,22 @@ class GUI_MSLK:
                 label=choice, command=tk._setit(self.variable, choice))
 
     def dir_path(self):
+        """funkcija za opdianje okna kjer uporabnik določi poto do mape
+        kjer se bo shranjevale meritve"""
+
         file_path = tk.filedialog.askdirectory()
         self.entry_path.delete(0, 'end')
         self.entry_path.insert(0, file_path)
         self.cb_save_file.select()
 
     def load_file(self):
+        """Odpre se okno kjer lahko uporabnik izbere shranjene meritve za pregled in
+        nadalno obdelavo"""
+
         self.loaded_data_filename = tk.filedialog.askopenfilenames(
             filetypes=(('numpy files', '*.npy'), ('All files', '*.*')))
         self.text_data_for_plot.set(self.loaded_data_filename)
-        print(self.loaded_data_filename[0])
+        print(self.loaded_data_filename[0])#spodaj odstrani naredi nove podatke
         self.data_freq, self.data_frf, self.data_exc, self.data_h = np.load(
             self.loaded_data_filename[0], allow_pickle=True)
         self.data_ciklov = np.shape(self.data_frf)[0]
@@ -794,6 +828,8 @@ class GUI_MSLK:
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def kontrola_gumbov_podatkov(self):
+        """Funkcija nadoruje da se gubi za prehanjanje med različnimi podatki pravilno 
+        izklapljajo in uklapljajo"""
         self.prikazan_cikelj = 1
         self.prikazano_mesto = 1
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
@@ -820,23 +856,9 @@ class GUI_MSLK:
         self.data_loaded = True
         self.gumb_doloci_pole["state"] = "normal"
         self.stslabel.configure(text=f"Podatki pridobljeni, določiti je potrebno pole.")
-    # def lastne_oblike(self):
-        # frf = []
-        # for i in range(len(self.tarče)):
-        #     cilj = self.tarče[i]
-        #     self.image = self.scanner.namesto(cilj)
-        #     self.image = self.scanner.kamera.req("img")
-        #     self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-        #     self.imgshow()
-        #     self.stslabel.configure(text=f"Meritev na {i+1}. mestu.")
-        #     frf_izmerjeni = self.metitev_trenutnega_mesta()
-        #     frf.append(frf_izmerjeni.get_FRF()[1:])
-        #     if self.prekini == True:
-        #         break
-        # frf = np.array(frf)
-        # freq = frf_izmerjeni.get_f_axis()[1:]
 
     def doloci_pole(self):
+        """Odpre se novo okno v s pomočjo pyEMA kjer se določiko poli"""
         self.acc = pyEMA.Model(frf=self.data_frf[self.prikazan_cikelj-1],
                                freq=self.data_freq,
                                lower=10,
@@ -850,6 +872,7 @@ class GUI_MSLK:
         self.acc.select_poles()
 
     def lastne_oblike_plot(self):
+        """Funkcija skrbi za plotanje lastnih oblik s pomočjo pyEMA"""
         # self.acc.print_modal_data()
         #frf_rec, modal_const = acc.get_constants(whose_poles='own', FRF_ind='all')
         self.axes_lastne_oblike.cla()
@@ -860,6 +883,7 @@ class GUI_MSLK:
         self.tabControltab3.select(self.tab3tab3)
 
     def spremeni_stanje(self, b1):  # ,b2):
+        """Funkcija spremeni stanje gumba b1 iz aktivnega v neaktivnega oz obratno"""
         if b1["state"] == "normal":
             b1["state"] = "disabled"
             #b2["text"] = "enable"
@@ -868,6 +892,8 @@ class GUI_MSLK:
             #b2["text"] = "disable"
 
     def switch(self):
+        """Funkcija zbira vse gumbe ki ob določenih dogodkih spremenijo
+         stanje aktivno/ne aktnivo"""
         # tab1
         self.spremeni_stanje(self.gumb_vspostavi_povezavo)
         self.spremeni_stanje(self.gumb_prekini_povezavo)
@@ -892,7 +918,43 @@ class GUI_MSLK:
         if self.poli_določeni == True:
             self.spremeni_stanje(self.gumb_plotaj_lastne)
 
+    def izbrano_kladivo(self):
+        if self.var_kladivo.get() == True:
+            self.var_silomer.set(False)
+        else:
+            self.var_silomer.set(True)
+        self.urejanje_silomer_kladivo()
+
+    def izbran_silomer(self):
+        if self.var_silomer.get() == True:
+            self.var_kladivo.set(False)
+        else:
+            self.var_kladivo.set(True)
+        self.urejanje_silomer_kladivo()
+
+    def urejanje_silomer_kladivo(self):
+        """aktivacija in deaktivacija ustreznih oken glede na to s čim se miri"""
+        if self.var_kladivo.get() == True:
+            self.entry_silomer_faktor2['state'] = 'disabled'
+            self.text_kanal_sk.set("Kanal kladiva")
+            self.entry_silomer_kanal.delete(0, 'end')
+            self.entry_silomer_kanal.insert(0, self.nastavitve["ai2"])
+            self.text_faktor_sk.set("Faktor kladiva [mV/N]")
+            self.entry_silomer_faktor1.delete(0, 'end')
+            self.entry_silomer_faktor1.insert(0, self.nastavitve["f kladivo"])
+
+        else:
+            self.entry_silomer_faktor2['state'] = 'normal'
+            self.text_kanal_sk.set("Kanal silomera")
+            self.entry_silomer_kanal.delete(0, 'end')
+            self.entry_silomer_kanal.insert(0, self.nastavitve["ai1"])
+            self.text_faktor_sk.set("Faktor silomera [pC/N]")
+            self.entry_silomer_faktor1.delete(0, 'end')
+            self.entry_silomer_faktor1.insert(0, self.nastavitve["f1"])
+
     def laser_Ux_gor(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer x,
+         POVEČANJE vrednosti"""
         self.U_x += float(self.entry_U_pomik.get())
         self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
         self.text_Ux.set(f"{self.U_x:.2f}")
@@ -902,6 +964,8 @@ class GUI_MSLK:
         self.imgshow()
 
     def laser_Ux_dol(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer x,
+         ZMANŠANJE vrednosti"""
         self.U_x -= float(self.entry_U_pomik.get())
         self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
         self.text_Ux.set(f"{self.U_x:.2f}")
@@ -911,6 +975,8 @@ class GUI_MSLK:
         self.imgshow()
 
     def laser_Uy_gor(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer y,
+         POVEČANJE vrednosti"""
         self.U_y += float(self.entry_U_pomik.get())
         self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
         self.text_Uy.set(f"{self.U_y:.2f}")
@@ -920,6 +986,8 @@ class GUI_MSLK:
         self.imgshow()
 
     def laser_Uy_dol(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer y,
+         ZMANŠANJE vrednosti"""
         self.U_y -= float(self.entry_U_pomik.get())
         self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
         self.text_Uy.set(f"{self.U_y:.2f}")
@@ -929,6 +997,7 @@ class GUI_MSLK:
         self.imgshow()
 
     def cikelj_nazaj(self):
+        """Prikaže se ploti prejšnega cikla"""
         if self.prikazan_cikelj == self.data_ciklov:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
 
@@ -942,6 +1011,7 @@ class GUI_MSLK:
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def cikelj_naprej(self):
+        """Prikažejo se ploti naslednjega cikla"""
         if self.prikazan_cikelj == 1:
             self.spremeni_stanje(self.gumb_ciklj_prejšnji)
 
@@ -955,6 +1025,7 @@ class GUI_MSLK:
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def mesto_nazaj(self):
+        """prikažejo se ploti naslednjega mesta"""
         if self.prikazano_mesto == self.data_mest:
             self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
@@ -968,6 +1039,7 @@ class GUI_MSLK:
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def mesto_naprej(self):
+        """prikažejo se ploti prejšnega mesta"""
         if self.prikazano_mesto == 1:
             self.spremeni_stanje(self.gumb_mesto_prejšnje)
 
@@ -981,28 +1053,28 @@ class GUI_MSLK:
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def kalibracija_laserja(self):
+        """Izvede se ponova kalibracija laseraj na podlagi vpisanih vrednosti"""
         self.scanner.k = self.scanner.laser.kalibracija_basic(
             self.U_x, self.U_y, self.U_x - float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get()))
         self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
-
-    def gh1(self):
-        self.change_state()
-        threading.Thread(target=self.zajemanje_slike).start()
+        self.stslabel.configure(text=f"Kalibracija:{self.scanner.k}")
 
     def zajemanje_slike(self):
+        """Konstantno zajemanje slike, funkcija je aktiviran preko threading"""
         while self.continuePlottingImg:
             self.image = self.scanner.kamera.req("img")
             self.image = self.scanner.narisi_tarce(self.image, self.tarče)
             self.imgshow()
 
     def change_state(self):
-
+        """za nadzor funkcije self.zajemanje_slike"""
         if self.continuePlottingImg == True:
             self.continuePlottingImg = False
         else:
             self.continuePlottingImg = True
 
     def rtd_pi(self):
+        """Naložijo se prvotni podatki za RPi"""
         self.vnos1.delete(0, "end")
         self.vnos2.delete(0, "end")
         self.vnos3.delete(0, "end")
@@ -1018,6 +1090,7 @@ class GUI_MSLK:
         self.stslabel.configure(text="Nastavitve RPi ponastavljene.")
 
     def save_pi(self):
+        """Shranjevanje podatkov za RPi v datoteko"""
         self.nastavitve["hostname"] = str(self.vnos1.get())
         self.nastavitve["port"] = int(self.vnos2.get())
         self.nastavitve["username"] = str(self.vnos3.get())
@@ -1034,6 +1107,7 @@ class GUI_MSLK:
                 text="NAPKA! Nastavitve RPi NISO sharanjene.")
 
     def rtd_ni(self):
+        """Naložijo se prvotni podatki za merilne kartice"""
         self.vnos1_ni.delete(0, "end")
         self.vnos2_ni.delete(0, "end")
         self.vnos3_ni.delete(0, "end")
@@ -1050,6 +1124,7 @@ class GUI_MSLK:
             text="Nastavitve merilne kartice ponastavljene.")
 
     def save_ni(self):
+        """shranjevanje podatkov merilnih kartic v datoteko"""
         self.nastavitve["ao0"] = str(self.vnos1_ni.get())
         self.nastavitve["ao1"] = str(self.vnos2_ni.get())
         self.nastavitve["ai0"] = str(self.vnos3_ni.get())
@@ -1070,6 +1145,7 @@ class GUI_MSLK:
                 text="NAPKA! Nastavitve merilne kartice NISO sharanjene.")
 
     def on_click(self, event):
+        """Funkcija ki opazuje in določa kaj se zgodi ko kliknemo na sliko"""
         if event.inaxes is not None:
             tarča = [event.xdata, event.ydata]
             self.tarče.append(tarča)
@@ -1084,6 +1160,7 @@ class GUI_MSLK:
         print(self.tarče)
 
     def imgshow(self):
+        """Funkcija skrbi za prikaz slike pridobljene iz RPi"""
         self.fig.clear()
         self.fig.add_subplot(111).imshow(self.image[:, :, ::-1])
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.tab1)
@@ -1091,6 +1168,7 @@ class GUI_MSLK:
         self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
 
     def izbriši_zadnjo_tarčo(self):
+        """S seznama tarč se izbriše zadnja tarča"""
         if len(self.tarče) != 0:
             self.tarče = self.tarče[:-1]
             self.stslabel.configure(text="Tarča odstranjena")
@@ -1104,12 +1182,19 @@ class GUI_MSLK:
                 self.imgshow()
 
     def izbriši_vse_tarče(self):
+        """pobriše se celoten seznam tarč"""
         self.tarče = []
         self.image = self.scanner.kamera.req("img")
         self.stslabel.configure(text="Vse tarče odstranjene")
         self.imgshow()
 
-# _______________________________Threading_______________________________________________
+# _______________________________Threading______________________________________
+    """funkcije so namenjene temu da bi stvari lahko delovale sočasno, večino 
+    jih ne deluje pravilno..."""
+
+    def gh1(self):
+        self.change_state()
+        threading.Thread(target=self.zajemanje_slike).start()
 
     def gui_handler_grafi(self, exc, h, t, frf):
         threading.Thread(target=self.update_grafe(exc, h, t, frf)).start()
@@ -1118,18 +1203,19 @@ class GUI_MSLK:
         self.prekini = False
         threading.Thread(target=self.zacni_meritev()).start()
 
-    def gui_handler_zajem(self):
-        threading.Thread(target=self.zajem_podatkov()).start()
+    # def gui_handler_zajem(self):
+    #     threading.Thread(target=self.zajem_podatkov()).start()
 
-    def zajem_podatkov(self):
-        self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
+    # def zajem_podatkov(self):
+    #     self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
 
     def metitev_trenutnega_mesta(self):
         threading.Thread(target=self.real_meritev_trenutnega_mesta()).start()
 
-# _______________________________Ostale funkcije________________________________________
+# ____________________________________________________________________________
 
     def pomik_na_nasledno_tarčo(self):
+        """Funkcija pomakne laser na naslednjo tarčo v seznamu tarč"""
         self.na_tarči += 1
         i = self.na_tarči % len(self.tarče)
         cilj = self.tarče[i]
@@ -1140,6 +1226,7 @@ class GUI_MSLK:
         self.stslabel.configure(text=f"Premik na tarčo {i+1}.")
 
     def pomik_na_prejšno_tarčo(self):
+        """Funkcija pomakne laser na prejšnjo tarčo v seznamu tarč"""
         self.na_tarči -= 1
         i = self.na_tarči % len(self.tarče)
         cilj = self.tarče[i]
@@ -1150,6 +1237,7 @@ class GUI_MSLK:
         self.stslabel.configure(text=f"Premik na tarčo {i+1}.")
 
     def update_grafe(self, t, exc, h, f, frf):
+        """Posodobijo se vis grafi-- za enkrat je tako da se posodobijo samo FRF"""
         # začasno!!!!!!!
         if len(t) != 0:
             # plotanje za laser
@@ -1189,7 +1277,7 @@ class GUI_MSLK:
 
         self.graph_FRF.draw()
 
-    def real_meritev_trenutnega_mesta(self):
+    def pridobi_zahteve_merjenja(self):
         self.scanner.meritev.ch_laser = str(self.entry_laser_kanal.get())
         self.scanner.meritev.ch_silomer = str(self.entry_silomer_kanal.get())
         self.scanner.meritev.frekvenca = float(self.variable.get())
@@ -1198,12 +1286,18 @@ class GUI_MSLK:
         self.scanner.meritev.U_min = float(self.entry_laser_U_min.get())
         self.scanner.meritev.las_v = float(self.entry_laser_v.get())
         self.scanner.meritev.f1 = float(self.entry_silomer_faktor1.get())
-        self.scanner.meritev.f2 = float(self.entry_silomer_faktor2.get())
+        if self.var_kladivo.get() == True:
+            self.scanner.meritev.f2 = 1.0
+        else:
+            self.scanner.meritev.f2 = float(self.entry_silomer_faktor2.get())
 
+    def real_meritev_trenutnega_mesta(self):
+        """Funkcija za izvajanje meritve, aktiviran je preko threading"""
+        self.pridobi_zahteve_merjenja()
         toc = time.time()
         for i in range(int(self.entry_povprečenje.get())):
             if i == 0:
-                self.gui_handler_zajem()
+                self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
                 self.frf = FRF(sampling_freq=1/self.t[1],
                                exc=self.exc,
                                resp=self.h,
@@ -1218,7 +1312,7 @@ class GUI_MSLK:
                                   self.frf.get_f_axis(), self.frf.get_FRF())
 
             else:
-                self.gui_handler_zajem()
+                self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
                 self.frf.add_data(self.exc, self.h)
                 self.update_grafe(self.t, self.exc, self.h,
                                   self.frf.get_f_axis(), self.frf.get_FRF())
@@ -1238,6 +1332,66 @@ class GUI_MSLK:
     # return return_value
 
     def zacni_meritev(self):
+
+        if self.var_kladivo.get()==True:
+            self.meritev_s_kladivom()
+        else:
+            self.meritev_s_silomerom()
+            
+    def končaj_zajem_kladivom(self):
+        self.stop_zajemanje_kladivom=True
+
+    def meritev_s_kladivom(self):
+        if self.objek_je_mirn==False:
+            self.pridobi_zahteve_merjenja()
+            self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
+            self.update_grafe(self.t, self.exc, self.h,1, 1)
+
+        #določanje ali je objekt dovolj miren
+        v_max = np.max(self.h)
+        v_min = np.min(self.h)
+        abs_v=v_max-v_min
+        if abs_v<=0.3*float(self.entry_laser_v.get()) or self.objek_je_mirn:
+            if self.objek_je_mirn==False:
+                self.beep_pripravljen_za_meritev()
+                self.scanner.meritev.čas = 10
+                self.objek_je_mirn=True
+            self.beep_start()
+            self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
+            self.update_grafe(self.t, self.exc, self.h,1, 1)
+            triger_val = 2
+            #preverjanje ali je bil sprožen triger
+            if np.max(self.exc)>triger_val:
+                indeks_triger = np.argmax(self.exc > float(triger_val))
+                nazaj=int(0.01*self.scanner.meritev.frekvenca)
+                st_vzorcev = int(self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
+                print(indeks_triger-nazaj,indeks_triger-nazaj+st_vzorcev)
+                self.exc = self.exc[indeks_triger-nazaj:indeks_triger-nazaj+st_vzorcev]
+                self.h = self.h[indeks_triger-nazaj:indeks_triger-nazaj+st_vzorcev]
+                self.t = self.t[:st_vzorcev]
+                print(len(self.exc),len(self.h),len(self.t))
+                self.frf = FRF(sampling_freq=1/self.t[1],
+                               exc=self.exc,
+                               resp=self.h,
+                               resp_type='v',
+                               frf_type=self.variable_typ.get(),
+                               exc_window=self.variable_okno_exc.get(),
+                               resp_window=self.variable_okno_h.get(),
+                               n_averages=int(self.entry_povprečenje.get()),
+                               resp_delay=float(self.entry_laser_delay.get()))
+
+                self.update_grafe(self.t, self.exc, self.h,
+                                  self.frf.get_f_axis(), self.frf.get_FRF())
+                self.prekini=True
+        else:
+            self.objek_je_mirn = False
+        
+        if self.prekini == False:
+            self.master.after(10, self.meritev_s_kladivom)
+        else:
+            self.objek_je_mirn = False
+
+    def meritev_s_silomerom(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
         if self.var_save.get() == 1:
@@ -1286,12 +1440,36 @@ class GUI_MSLK:
 
         if self.var_save.get() == 1:
             np.save(file_opend, (self.data_freq,
-                                 self.data_frf, self.data_exc, self.data_h))
+                                 self.data_frf))#, self.data_exc, self.data_h))
             self.append_to_file = False
 
     def prekini_meritev(self):
+        """Funkcija namenjena kontroli funkcije self.zacni_meritev"""
         self.prekini = True
         print("prekini")
+
+#________________________________Beeps__________________________________________
+    def beep_pripravljen_za_meritev(self):
+        frequency1 = 2500  # Set Frequency To 2500 Hertz
+        duration1 = 400  # Set Duration To 1000 ms == 1 second
+        frequency2 = 6000  # Set Frequency To 2500 Hertz
+        duration2 = 200  # Set Duration To 1000 ms == 1 second
+        winsound.Beep(frequency1, duration1)
+        winsound.Beep(frequency2, duration2)
+
+    def beep_double(self):
+        frequency1 = 3000  # Set Frequency To 2500 Hertz
+        duration1 = 200  # Set Duration To 1000 ms == 1 second
+        frequency2 = 1500  # Set Frequency To 2500 Hertz
+        duration2 = 600  # Set Duration To 1000 ms == 1 second
+        winsound.Beep(frequency1, duration1)
+        winsound.Beep(frequency2, duration2)
+
+    def beep_start(self):
+        frequency = 1900
+        duration = 250
+        winsound.Beep(frequency,duration)
+        winsound.Beep(frequency,duration)
 
 
 root = tk.Tk()
