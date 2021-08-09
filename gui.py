@@ -27,14 +27,15 @@ class GUI_MSLK:
         self.master.geometry("%dx%d+0+0" % (w-100, h-100))
 
         # status bar
-        frame_info = tk.Frame(self.master,relief=tk.SUNKEN)
-        frame_info.pack(fill=tk.X,side=tk.BOTTOM)
+        frame_info = tk.Frame(self.master, relief=tk.SUNKEN)
+        frame_info.pack(fill=tk.X, side=tk.BOTTOM)
         self.stslabel = tk.Label(
             frame_info, anchor=tk.W, text="Program priprvljen. Potrebno je vspostaviti povezavo s RPi")
         self.stslabel.pack(side=tk.LEFT)
 
-        self.progress = ttk.Progressbar(frame_info, orient=tk.HORIZONTAL,length=100,  mode='indeterminate')
-        
+        self.progress = ttk.Progressbar(
+            frame_info, orient=tk.HORIZONTAL, length=100,  mode='indeterminate')
+
 
 ##################################_Load_data_########################################
 
@@ -91,9 +92,9 @@ class GUI_MSLK:
         self.data_frf = None
         self.data_loaded = False
         self.poli_določeni = False
-        self.prikazan_cikelj=1
-        self.prikazano_mesto=1
-        self.load_bar_stop=False
+        self.prikazan_cikelj = 1
+        self.prikazano_mesto = 1
+        self.load_bar_stop = False
 
     # definiranje zavihkov
         tabControl = ttk.Notebook(self.master)
@@ -394,14 +395,16 @@ class GUI_MSLK:
 
         self.entry_osnovna_frekvenca = tk.Entry(frame_zajem_nastavitve)
         self.entry_osnovna_frekvenca.grid(row=1, column=1)
-        self.entry_osnovna_frekvenca.insert(0, self.nastavitve["osnovna frekvenca"])
+        self.entry_osnovna_frekvenca.insert(
+            0, self.nastavitve["osnovna frekvenca"])
 
-        self.gumb_izračunaj_frekvence = tk.Button(frame_zajem_nastavitve,text="Izračunaj frekvence",command=self.izračun_možnih_frekvenc)
-        self.gumb_izračunaj_frekvence.grid(row=1,column=2)
+        self.gumb_izračunaj_frekvence = tk.Button(
+            frame_zajem_nastavitve, text="Izračunaj frekvence", command=self.izračun_možnih_frekvenc)
+        self.gumb_izračunaj_frekvence.grid(row=2, column=0, columnspan=2)
 
         label_frekvenca_vzorcenja = tk.Label(
             frame_zajem_nastavitve, text="Frekvenca vzorčenja [Hz]")
-        label_frekvenca_vzorcenja.grid(row=2, column=0)
+        label_frekvenca_vzorcenja.grid(row=3, column=0)
 
         self.mozne_frekvence = ["51200.0",
                                 "25600.0",
@@ -441,28 +444,28 @@ class GUI_MSLK:
 
         self.om_frekvenca = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable, *self.mozne_frekvence)
-        self.om_frekvenca.grid(row=2, column=1)
+        self.om_frekvenca.grid(row=3, column=1)
 
         label_cas_meritve = tk.Label(
             frame_zajem_nastavitve, text="Čas meritve [s]")
-        label_cas_meritve.grid(row=3, column=0)
+        label_cas_meritve.grid(row=4, column=0)
 
         self.entry_cas_meritve = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_cas_meritve.grid(row=3, column=1)
+        self.entry_cas_meritve.grid(row=4, column=1)
         self.entry_cas_meritve.insert(0, self.nastavitve["čas"])
 
         label_povprečenje = tk.Label(
             frame_zajem_nastavitve, text="Vzorcev za povprečenje")
-        label_povprečenje.grid(row=4, column=0)
+        label_povprečenje.grid(row=5, column=0)
 
         self.entry_povprečenje = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_povprečenje.grid(row=4, column=1)
+        self.entry_povprečenje.grid(row=5, column=1)
         self.entry_povprečenje.insert(
             0, self.nastavitve["vzorcev za povprečenje"])
 
         # Kontrola FRF
         label_okno_exc = tk.Label(frame_zajem_nastavitve, text="Okno exc")
-        label_okno_exc.grid(row=5, column=0)
+        label_okno_exc.grid(row=6, column=0)
 
         self.okna = ['None', 'Hann', 'Hamming', 'Force',
                      'Exponential', 'Bartlett', 'Blackman', 'Kaiser']
@@ -472,20 +475,20 @@ class GUI_MSLK:
 
         self.om_okno_exc = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_okno_exc, *self.okna)
-        self.om_okno_exc.grid(row=5, column=1)
+        self.om_okno_exc.grid(row=6, column=1)
 
         label_okno_h = tk.Label(frame_zajem_nastavitve, text="Okno h")
-        label_okno_h.grid(row=6, column=0)
+        label_okno_h.grid(row=7, column=0)
 
         self.variable_okno_h = tk.StringVar(self.master)
         self.variable_okno_h.set(self.okna[self.nastavitve["okno h"]])
 
         self.om_okno_h = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_okno_h, *self.okna)
-        self.om_okno_h.grid(row=6, column=1)
+        self.om_okno_h.grid(row=7, column=1)
 
         label_typ = tk.Label(frame_zajem_nastavitve, text="Typ")
-        label_typ.grid(row=7, column=0)
+        label_typ.grid(row=8, column=0)
 
         self.types = ['H1', 'H2', 'Hv', 'vector', 'ODS']
 
@@ -494,75 +497,28 @@ class GUI_MSLK:
 
         self.om_typ = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_typ, *self.types)
-        self.om_typ.grid(row=7, column=1)
+        self.om_typ.grid(row=8, column=1)
 
         self.var_save = tk.IntVar()
         self.cb_save_file = tk.Checkbutton(
             frame_zajem_nastavitve, text='Shranjuj podatke', variable=self.var_save, onvalue=1, offvalue=0)
-        self.cb_save_file.grid(row=8, column=1, columnspan=2)
+        self.cb_save_file.grid(row=9, column=0, columnspan=2)
 
         label_ime_datoteke = tk.Label(
             frame_zajem_nastavitve, text="Ime datoteke")
-        label_ime_datoteke.grid(row=9, column=0)
+        label_ime_datoteke.grid(row=10, column=0)
 
         self.entry_ime_datoteke = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_ime_datoteke.grid(row=9, column=1)
+        self.entry_ime_datoteke.grid(row=10, column=1)
         self.entry_ime_datoteke.insert(0, self.nastavitve["file_name"])
 
         button_path = tk.Button(frame_zajem_nastavitve,
                                 text="Pot do datoteke", command=self.dir_path)
-        button_path.grid(row=10, column=0)
+        button_path.grid(row=11, column=0)
 
         self.entry_path = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_path.grid(row=10, column=1)
+        self.entry_path.grid(row=11, column=1)
         self.entry_path.insert(0, self.nastavitve["dir"])
-
-        # Kontrole za začetek merive
-        frame_gumbi_tab3 = tk.Frame(
-            master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_gumbi_tab3.grid(row=3, column=0)
-
-        self.gumb_prejšnja = tk. Button(frame_gumbi_tab3, text="Pomik na prejšnjo tarčo",
-                                        command=self.pomik_na_prejšno_tarčo)  # moras se naredit funkcijo
-        self.gumb_prejšnja.grid(row=0, column=0)
-
-        self.gumb_nasledna = tk. Button(frame_gumbi_tab3, text="Pomik na naslednjo tarčo",
-                                        command=self.pomik_na_nasledno_tarčo)  # moras se naredit funkcijo
-        self.gumb_nasledna.grid(row=0, column=1)
-
-        self.gumb_ena_meritev = tk. Button(
-            frame_gumbi_tab3, text="Meritev trenutnega mesta", command=self.metitev_trenutnega_mesta)  # moras se naredit
-        self.gumb_ena_meritev.grid(row=1, column=0, columnspan=2)
-
-        self.label_stevilo_ciklov = tk.Label(
-            frame_gumbi_tab3, text='Število ciklov:')
-        self.label_stevilo_ciklov.grid(row=2, column=0)
-
-        self.entry_stevilo_ciklov = tk.Entry(frame_gumbi_tab3)
-        self.entry_stevilo_ciklov.grid(row=2, column=1)
-        self.entry_stevilo_ciklov.insert(0, self.nastavitve["število ciklov"])
-
-        self.gumb_začni_meritev = tk. Button(
-            frame_gumbi_tab3, text="Začni cikelj meritev", command=self.gui_handler)
-        self.gumb_začni_meritev.grid(row=3, column=0)
-
-        self.gumb_prekini_meritev = tk. Button(
-            frame_gumbi_tab3, text="Prekini cikelj", command=self.prekini_meritev)
-        self.gumb_prekini_meritev.grid(row=3, column=1)
-
-        # self.gumb_lastne = tk. Button(
-        #     frame_gumbi_tab3, text="Izmeri lastne oblike", command=self.lastne_oblike)
-        # self.gumb_lastne.grid(row=4, column=0)
-
-        self.gumb_doloci_pole = tk. Button(
-            frame_gumbi_tab3, text="Določi pole", command=self.doloci_pole)
-        self.gumb_doloci_pole.grid(row=4, column=0)
-        self.spremeni_stanje(self.gumb_doloci_pole)
-
-        self.gumb_plotaj_lastne = tk. Button(
-            frame_gumbi_tab3, text="Plotaj lastne oblike", command=self.lastne_oblike_plot)
-        self.gumb_plotaj_lastne.grid(row=4, column=1)
-        self.spremeni_stanje(self.gumb_plotaj_lastne)
 
         # plotanje
         frame_tab3_plotanje = tk.Frame(
@@ -652,10 +608,53 @@ class GUI_MSLK:
         self.graph_lastne_oblike._tkcanvas.pack(
             side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
+        # Kontrole za začetek merive
+        frame_gumbi_tab3 = tk.Frame(
+            master=self.tab3, relief=tk.RAISED, borderwidth=1)
+        frame_gumbi_tab3.grid(row=0, column=2)
+
+        self.gumb_prejšnja = tk. Button(frame_gumbi_tab3, text="Pomik na prejšnjo tarčo",
+                                        command=self.pomik_na_prejšno_tarčo)  # moras se naredit funkcijo
+        self.gumb_prejšnja.grid(row=0, column=0)
+
+        self.gumb_nasledna = tk. Button(frame_gumbi_tab3, text="Pomik na naslednjo tarčo",
+                                        command=self.pomik_na_nasledno_tarčo)  # moras se naredit funkcijo
+        self.gumb_nasledna.grid(row=0, column=1)
+
+        self.gumb_ena_meritev = tk. Button(
+            frame_gumbi_tab3, text="Meritev trenutnega mesta", command=self.metitev_trenutnega_mesta)  # moras se naredit
+        self.gumb_ena_meritev.grid(row=1, column=0, columnspan=2)
+
+        self.label_stevilo_ciklov = tk.Label(
+            frame_gumbi_tab3, text='Število ciklov:')
+        self.label_stevilo_ciklov.grid(row=2, column=0)
+
+        self.entry_stevilo_ciklov = tk.Entry(frame_gumbi_tab3)
+        self.entry_stevilo_ciklov.grid(row=2, column=1)
+        self.entry_stevilo_ciklov.insert(0, self.nastavitve["število ciklov"])
+
+        self.gumb_začni_meritev = tk. Button(
+            frame_gumbi_tab3, text="Začni cikelj meritev", command=self.gui_handler)
+        self.gumb_začni_meritev.grid(row=3, column=0)
+
+        self.gumb_prekini_meritev = tk. Button(
+            frame_gumbi_tab3, text="Prekini cikelj", command=self.prekini_meritev)
+        self.gumb_prekini_meritev.grid(row=3, column=1)
+
+        self.gumb_doloci_pole = tk. Button(
+            frame_gumbi_tab3, text="Določi pole", command=self.doloci_pole)
+        self.gumb_doloci_pole.grid(row=4, column=0)
+        self.spremeni_stanje(self.gumb_doloci_pole)
+
+        self.gumb_plotaj_lastne = tk. Button(
+            frame_gumbi_tab3, text="Plotaj lastne oblike", command=self.lastne_oblike_plot)
+        self.gumb_plotaj_lastne.grid(row=4, column=1)
+        self.spremeni_stanje(self.gumb_plotaj_lastne)
+
         # Loadanje in upravljanje s ploti
         frame_upravlanje_plotov_tab3 = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_upravlanje_plotov_tab3.grid(row=0, column=2)
+        frame_upravlanje_plotov_tab3.grid(row=1, column=2)
 
         label_upravljanje_plotov = tk.Label(
             frame_upravlanje_plotov_tab3, text="Izbira podatkov")
@@ -668,15 +667,16 @@ class GUI_MSLK:
         self.text_data_for_plot = tk.StringVar()
         self.text_data_for_plot.set("Bere se iz zadnje meritve.")
 
-        self.entry_data_for_plot = tk.Entry(frame_upravlanje_plotov_tab3, textvariable=self.text_data_for_plot)
-        self.entry_data_for_plot.grid(row=2,column=0,columnspan=3)
+        self.entry_data_for_plot = tk.Entry(
+            frame_upravlanje_plotov_tab3, textvariable=self.text_data_for_plot)
+        self.entry_data_for_plot.grid(row=2, column=0, columnspan=3)
 
-        label_ciklej = tk.Label(
-            frame_upravlanje_plotov_tab3, text="Trenutno prikazan ciklej:")
-        label_ciklej.grid(row=3, column=0, columnspan=3)
+        label_cikelj = tk.Label(
+            frame_upravlanje_plotov_tab3, text="Trenutno prikazan cikelj:")
+        label_cikelj.grid(row=3, column=0, columnspan=3)
 
         self.gumb_ciklj_prejšnji = tk.Button(
-            frame_upravlanje_plotov_tab3, text="<",command=self.cikelj_nazaj)
+            frame_upravlanje_plotov_tab3, text="<", command=self.cikelj_nazaj)
         self.gumb_ciklj_prejšnji.grid(row=4, column=0)
         self.spremeni_stanje(self.gumb_ciklj_prejšnji)
 
@@ -688,7 +688,7 @@ class GUI_MSLK:
         label_trenutni_cikelj.grid(row=4, column=1)
 
         self.gumb_cikelj_nasljednji = tk.Button(
-            frame_upravlanje_plotov_tab3, text=">",command=self.cikelj_naprej)
+            frame_upravlanje_plotov_tab3, text=">", command=self.cikelj_naprej)
         self.gumb_cikelj_nasljednji.grid(row=4, column=2)
         self.spremeni_stanje(self.gumb_cikelj_nasljednji)
 
@@ -697,24 +697,25 @@ class GUI_MSLK:
         label_mesto.grid(row=5, column=0, columnspan=3)
 
         self.gumb_mesto_prejšnje = tk.Button(
-            frame_upravlanje_plotov_tab3, text="<",command=self.mesto_nazaj)
+            frame_upravlanje_plotov_tab3, text="<", command=self.mesto_nazaj)
         self.gumb_mesto_prejšnje.grid(row=6, column=0)
         self.spremeni_stanje(self.gumb_mesto_prejšnje)
 
         self.text_prikazano_mesto = tk.StringVar()
         self.text_prikazano_mesto.set(self.prikazano_mesto)
 
-        label_trenutno_mesto = tk.Label(frame_upravlanje_plotov_tab3, textvariable=self.text_prikazano_mesto)
+        label_trenutno_mesto = tk.Label(
+            frame_upravlanje_plotov_tab3, textvariable=self.text_prikazano_mesto)
         label_trenutno_mesto.grid(row=6, column=1)
 
         self.gumb_mesto_nasljednje = tk.Button(
-            frame_upravlanje_plotov_tab3, text=">",command=self.mesto_naprej)
+            frame_upravlanje_plotov_tab3, text=">", command=self.mesto_naprej)
         self.gumb_mesto_nasljednje.grid(row=6, column=2)
         self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
         self.switch()
-        #self.spremeni_stanje(self.gumb_plotaj_lastne)
-        
+        # self.spremeni_stanje(self.gumb_plotaj_lastne)
+
 # ===============================Funkcije=========================================
     def connect(self):
 
@@ -760,7 +761,7 @@ class GUI_MSLK:
 
     def izračun_možnih_frekvenc(self):
         osnovna = float(self.entry_osnovna_frekvenca.get())
-        seznam_frekvenc=[]
+        seznam_frekvenc = []
         for i in range(31):
             f = str(osnovna/(256*(i+1)))
             seznam_frekvenc.append(f)
@@ -768,8 +769,8 @@ class GUI_MSLK:
         print(self.mozne_frekvence)
         self.om_frekvenca['menu'].delete(0, 'end')
         for choice in self.mozne_frekvence:
-            self.om_frekvenca['menu'].add_command(label=choice, command=tk._setit(self.variable, choice))
-    
+            self.om_frekvenca['menu'].add_command(
+                label=choice, command=tk._setit(self.variable, choice))
 
     def dir_path(self):
         file_path = tk.filedialog.askdirectory()
@@ -779,46 +780,47 @@ class GUI_MSLK:
 
     def load_file(self):
         self.loaded_data_filename = tk.filedialog.askopenfilenames(
-            filetypes=(('numpy files', '*.npy'),('All files', '*.*')))
+            filetypes=(('numpy files', '*.npy'), ('All files', '*.*')))
         self.text_data_for_plot.set(self.loaded_data_filename)
         print(self.loaded_data_filename[0])
-        self.data_freq, self.data_frf,self.data_exc,self.data_h = np.load(self.loaded_data_filename[0],allow_pickle=True)
-        self.data_ciklov=np.shape(self.data_frf)[0]
-        self.data_mest=np.shape(self.data_frf)[1]
-        
+        self.data_freq, self.data_frf, self.data_exc, self.data_h = np.load(
+            self.loaded_data_filename[0], allow_pickle=True)
+        self.data_ciklov = np.shape(self.data_frf)[0]
+        self.data_mest = np.shape(self.data_frf)[1]
+
         self.kontrola_gumbov_podatkov()
 
-        self.update_grafe([], 1, 1, self.data_freq, self.data_frf[self.prikazan_cikelj-1,self.prikazano_mesto-1])
-
+        self.update_grafe([], 1, 1, self.data_freq,
+                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def kontrola_gumbov_podatkov(self):
-        self.prikazan_cikelj=1
-        self.prikazano_mesto=1
+        self.prikazan_cikelj = 1
+        self.prikazano_mesto = 1
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
         self.text_prikazano_mesto.set(self.prikazano_mesto)
         self.tabControltab3.select(self.tab3tab2)
 
-        #zamrzne se vse gumbe 
-        if self.data_loaded==True:
+        # zamrzne se vse gumbe
+        if self.data_loaded == True:
             self.gumb_ciklj_prejšnji["state"] = "disabled"
             self.gumb_cikelj_nasljednji["state"] = "disabled"
             self.gumb_mesto_prejšnje["state"] = "disabled"
             self.gumb_mesto_nasljednje["state"] = "disabled"
-            self.data_loaded=False
+            self.data_loaded = False
 
-        #odmrzne se relavantne gumbe
-        if self.data_ciklov>1 and self.data_mest>1:
+        # odmrzne se relavantne gumbe
+        if self.data_ciklov > 1 and self.data_mest > 1:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
             self.spremeni_stanje(self.gumb_mesto_nasljednje)
-        elif self.data_ciklov>1:
+        elif self.data_ciklov > 1:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
-        elif self.data_mest>1:
+        elif self.data_mest > 1:
             self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
-        self.data_loaded=True
+        self.data_loaded = True
         self.gumb_doloci_pole["state"] = "normal"
         self.stslabel.configure(text=f"Podatki pridobljeni, določiti je potrebno pole.")
-    #def lastne_oblike(self):
+    # def lastne_oblike(self):
         # frf = []
         # for i in range(len(self.tarče)):
         #     cilj = self.tarče[i]
@@ -834,7 +836,6 @@ class GUI_MSLK:
         # frf = np.array(frf)
         # freq = frf_izmerjeni.get_f_axis()[1:]
 
-
     def doloci_pole(self):
         self.acc = pyEMA.Model(frf=self.data_frf[self.prikazan_cikelj-1],
                                freq=self.data_freq,
@@ -843,13 +844,13 @@ class GUI_MSLK:
                                pol_order_high=60)
         self.acc.get_poles()
         self.stslabel.configure(text=f"Poli določeni, možno je plotanje lastnih oblik.")
-        if self.poli_določeni == False: 
+        if self.poli_določeni == False:
             self.spremeni_stanje(self.gumb_plotaj_lastne)
         self.poli_določeni = True
         self.acc.select_poles()
 
     def lastne_oblike_plot(self):
-        #self.acc.print_modal_data()
+        # self.acc.print_modal_data()
         #frf_rec, modal_const = acc.get_constants(whose_poles='own', FRF_ind='all')
         self.axes_lastne_oblike.cla()
         for i in range(3):
@@ -886,12 +887,10 @@ class GUI_MSLK:
         self.spremeni_stanje(self.gumb_ena_meritev)
         self.spremeni_stanje(self.gumb_začni_meritev)
         self.spremeni_stanje(self.gumb_prekini_meritev)
-        if self.data_loaded==True:
+        if self.data_loaded == True:
             self.spremeni_stanje(self.gumb_doloci_pole)
         if self.poli_določeni == True:
             self.spremeni_stanje(self.gumb_plotaj_lastne)
-
-
 
     def laser_Ux_gor(self):
         self.U_x += float(self.entry_U_pomik.get())
@@ -929,7 +928,6 @@ class GUI_MSLK:
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
         self.imgshow()
 
-            
     def cikelj_nazaj(self):
         if self.prikazan_cikelj == self.data_ciklov:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
@@ -940,7 +938,8 @@ class GUI_MSLK:
         if self.prikazan_cikelj == 1:
             self.spremeni_stanje(self.gumb_ciklj_prejšnji)
 
-        self.update_grafe([], 1, 1, self.data_freq, self.data_frf[self.prikazan_cikelj-1,self.prikazano_mesto-1])
+        self.update_grafe([], 1, 1, self.data_freq,
+                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def cikelj_naprej(self):
         if self.prikazan_cikelj == 1:
@@ -952,7 +951,8 @@ class GUI_MSLK:
         if self.prikazan_cikelj == self.data_ciklov:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
 
-        self.update_grafe([], 1, 1, self.data_freq, self.data_frf[self.prikazan_cikelj-1,self.prikazano_mesto-1])
+        self.update_grafe([], 1, 1, self.data_freq,
+                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def mesto_nazaj(self):
         if self.prikazano_mesto == self.data_mest:
@@ -964,19 +964,21 @@ class GUI_MSLK:
         if self.prikazano_mesto == 1:
             self.spremeni_stanje(self.gumb_mesto_prejšnje)
 
-        self.update_grafe([], 1, 1, self.data_freq, self.data_frf[self.prikazan_cikelj-1,self.prikazano_mesto-1])
+        self.update_grafe([], 1, 1, self.data_freq,
+                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def mesto_naprej(self):
         if self.prikazano_mesto == 1:
             self.spremeni_stanje(self.gumb_mesto_prejšnje)
-        
-        self.prikazano_mesto +=1
+
+        self.prikazano_mesto += 1
         self.text_prikazano_mesto.set(self.prikazano_mesto)
-        
+
         if self.prikazano_mesto == self.data_mest:
             self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
-        self.update_grafe([], 1, 1, self.data_freq, self.data_frf[self.prikazan_cikelj-1,self.prikazano_mesto-1])
+        self.update_grafe([], 1, 1, self.data_freq,
+                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def kalibracija_laserja(self):
         self.scanner.k = self.scanner.laser.kalibracija_basic(
@@ -1107,7 +1109,7 @@ class GUI_MSLK:
         self.stslabel.configure(text="Vse tarče odstranjene")
         self.imgshow()
 
-#_______________________________Threading_______________________________________________
+# _______________________________Threading_______________________________________________
 
     def gui_handler_grafi(self, exc, h, t, frf):
         threading.Thread(target=self.update_grafe(exc, h, t, frf)).start()
@@ -1125,7 +1127,7 @@ class GUI_MSLK:
     def metitev_trenutnega_mesta(self):
         threading.Thread(target=self.real_meritev_trenutnega_mesta()).start()
 
-#_______________________________Ostale funkcije________________________________________
+# _______________________________Ostale funkcije________________________________________
 
     def pomik_na_nasledno_tarčo(self):
         self.na_tarči += 1
@@ -1148,8 +1150,8 @@ class GUI_MSLK:
         self.stslabel.configure(text=f"Premik na tarčo {i+1}.")
 
     def update_grafe(self, t, exc, h, f, frf):
-        #začasno!!!!!!!
-        if len(t)!=0:
+        # začasno!!!!!!!
+        if len(t) != 0:
             # plotanje za laser
             self.axes_meritev[0].cla()
             self.axes_meritev[0].plot(t, h)
@@ -1203,23 +1205,26 @@ class GUI_MSLK:
             if i == 0:
                 self.gui_handler_zajem()
                 self.frf = FRF(sampling_freq=1/self.t[1],
-                          exc=self.exc,
-                          resp=self.h,
-                          resp_type='v',
-                          frf_type=self.variable_typ.get(),
-                          exc_window=self.variable_okno_exc.get(),
-                          resp_window=self.variable_okno_h.get(),
-                          n_averages=int(self.entry_povprečenje.get()),
-                          resp_delay=float(self.entry_laser_delay.get()))
+                               exc=self.exc,
+                               resp=self.h,
+                               resp_type='v',
+                               frf_type=self.variable_typ.get(),
+                               exc_window=self.variable_okno_exc.get(),
+                               resp_window=self.variable_okno_h.get(),
+                               n_averages=int(self.entry_povprečenje.get()),
+                               resp_delay=float(self.entry_laser_delay.get()))
 
-                self.update_grafe(self.t,self.exc, self.h, self.frf.get_f_axis(),self.frf.get_FRF())
+                self.update_grafe(self.t, self.exc, self.h,
+                                  self.frf.get_f_axis(), self.frf.get_FRF())
 
             else:
                 self.gui_handler_zajem()
                 self.frf.add_data(self.exc, self.h)
-                self.update_grafe(self.t,self.exc, self.h, self.frf.get_f_axis(),self.frf.get_FRF())
+                self.update_grafe(self.t, self.exc, self.h,
+                                  self.frf.get_f_axis(), self.frf.get_FRF())
 
-        self.update_grafe(self.t,self.exc, self.h, self.frf.get_f_axis(),self.frf.get_FRF())
+        self.update_grafe(self.t, self.exc, self.h,
+                          self.frf.get_f_axis(), self.frf.get_FRF())
         print(time.time()-toc)
         if self.var_save.get() == 1:
             if self.append_to_file == False:
@@ -1272,15 +1277,16 @@ class GUI_MSLK:
         self.data_freq = self.frf.get_f_axis()[1:]
         #frf-ji [[frfji_cikla_1],[frfji_cikla_2],[frfji_cikla_3]]
         self.data_frf = np.array(frf_data)
-        #self.data_exc je [[exc_cikelj_1],[exc_cikej_2],[exc_cikelj_3]...]
+        # self.data_exc je [[exc_cikelj_1],[exc_cikej_2],[exc_cikelj_3]...]
         self.data_exc = exc_data
         self.data_h = h_data
-        self.data_ciklov=np.shape(self.data_frf)[0]
-        self.data_mest=np.shape(self.data_frf)[1]
+        self.data_ciklov = np.shape(self.data_frf)[0]
+        self.data_mest = np.shape(self.data_frf)[1]
         self.kontrola_gumbov_podatkov()
 
         if self.var_save.get() == 1:
-            np.save(file_opend, (self.data_freq, self.data_frf,self.data_exc,self.data_h))
+            np.save(file_opend, (self.data_freq,
+                                 self.data_frf, self.data_exc, self.data_h))
             self.append_to_file = False
 
     def prekini_meritev(self):
