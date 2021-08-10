@@ -62,15 +62,15 @@ class Meritev:
         self.f1 = f1
         self.f2 = f2
         self.st_vzorcev = int(self.frekvenca*self.čas)
+        self.continuous_bool = False
 
-    def naredi_meritev(self):
-        """funkcija vrne izmerjeno silo, pomerjen odziv (hitrost v mm/s), in čas meritve"""
+    def connect(self):
         self.st_vzorcev = int(self.frekvenca*self.čas)
         self.max_val_silomer = 5000/(self.f1*self.f2)*0.98
         self.min_val_silomer = -self.max_val_silomer
 
         self.task = nidaqmx.Task()
-        # laser
+         # laser
         self.task.ai_channels.add_ai_voltage_chan(
             self.ch_laser, min_val=self.U_min, max_val=self.U_max)
         # sila če je f2=0 pomeni da ni nabojnega ojačevalnka-> merimo napetost
@@ -80,17 +80,36 @@ class Meritev:
         else:
             self.task.ai_channels.add_ai_force_iepe_chan(
                 self.ch_silomer, sensitivity=self.f1*self.f2, min_val=self.min_val_silomer, max_val=self.max_val_silomer)
-        self.task.timing.cfg_samp_clk_timing(
-            self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan=self.st_vzorcev)
+        if self.continuous_bool:
+            self.task.timing.cfg_samp_clk_timing(
+                self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS, samps_per_chan=self.st_vzorcev*3)
+        else:
+            self.task.timing.cfg_samp_clk_timing(
+                self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan=self.st_vzorcev)
 
         self.task.start()
+
+    def one_measurment(self):
+        """funkcija vrne izmerjeno silo, pomerjen odziv (hitrost v mm/s), in čas meritve"""       
         data = self.task.read(self.st_vzorcev)
-        self.task.stop()
+        
         exc = np.array(data[1])
         h = np.array(data[0])*self.las_v/self.U_max
         t = np.linspace(0, self.st_vzorcev/self.frekvenca, self.st_vzorcev)
         print(t[-1])
+       
+        return exc, h, t
+
+    def disconnect(self):
+        self.task.stop()
         self.task.close()
+
+    def naredi_meritev(self):
+        self.continuous_bool = False
+        self.connect()
+        exc, h, t = self.one_measurment()
+        self.disconnect()
+
         return exc, h, t
 
 

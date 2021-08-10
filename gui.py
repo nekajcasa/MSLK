@@ -27,7 +27,7 @@ class GUI_MSLK:
         w, h = root.winfo_screenwidth(), root.winfo_screenheight()
         self.master.geometry("%dx%d+0+0" % (w-100, h-100))
 
-        # status bar
+#_________________________________Status_bar__________________________________________
         frame_info = tk.Frame(self.master, relief=tk.SUNKEN)
         frame_info.pack(fill=tk.X, side=tk.BOTTOM)
         self.stslabel = tk.Label(
@@ -36,9 +36,7 @@ class GUI_MSLK:
 
         self.progress = ttk.Progressbar(
             frame_info, orient=tk.HORIZONTAL, length=100,  mode='indeterminate')
-
-
-##################################_Load_data_########################################
+#_________________________________Load_data___________________________________________
 
         self.nastavitve_file = "files/nastavitve.pkl"
         try:
@@ -81,8 +79,8 @@ class GUI_MSLK:
             file = open("nastavitve.pkl", "wb")
             pickle.dump(self.nastavitve, file)
             file.close()
+#_________________________________Konstante___________________________________________
 
-#####################################################################################
     # definiranje konstant
         self.U_x = self.nastavitve["Ux"]
         self.U_y = self.nastavitve["Uy"]
@@ -99,10 +97,11 @@ class GUI_MSLK:
         self.prikazan_cikelj = 1
         self.prikazano_mesto = 1
         self.load_bar_stop = False
-        self.stop_zajemanje_kladivom = False
         self.objek_je_mirn = False
+        self.serija0 = False
+        self.triger = False
+#____________________________Definicija_zavihkov______________________________________
 
-    # definiranje zavihkov
         tabControl = ttk.Notebook(self.master)
 
         self.tab1 = ttk.Frame(tabControl)
@@ -113,8 +112,7 @@ class GUI_MSLK:
         tabControl.add(self.tab2, text='Nastavitve')
         tabControl.add(self.tab3, text='Meritve')
         tabControl.pack(expand=1, fill="both")
-
-    # tab1
+#___________________________________tab_1_____________________________________________
         self.gumb_izbriši_zadnjo_tarčo = tk.Button(
             self.tab1, text="Izbriši zadnjo tarčo", command=self.izbriši_zadnjo_tarčo)
         self.gumb_izbriši_zadnjo_tarčo.grid(row=0, column=1)
@@ -136,7 +134,7 @@ class GUI_MSLK:
             self.tab1, text="Pretakanje slike \n start/stop", command=self.gh1, bg="red", fg="white")
         self.gumb_pretakanje_slike.grid(row=2, column=1, columnspan=2)
 
-        # kontrole kalibracije
+    # kontrole kalibracije
         frame_kontorla_kalibracije = tk.Frame(
             master=self.tab1, relief=tk.RAISED, borderwidth=1, width=100, height=100)
         frame_kontorla_kalibracije.grid(row=3, column=1, columnspan=2)
@@ -208,8 +206,7 @@ class GUI_MSLK:
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
-
-    # tab2
+#___________________________________tab_2_____________________________________________
     # Polje za nastavitev RPi
         frame_pi_nastavitve = tk.Frame(
             master=self.tab2, relief=tk.RAISED, borderwidth=1, width=100, height=100)
@@ -302,8 +299,7 @@ class GUI_MSLK:
         ni_nast_gumb2 = tk.Button(
             master=frame_ni_nastavitve, text="Save", command=self.save_ni)
         ni_nast_gumb2.grid(row=5, column=1)
-
-        # tab 3
+#___________________________________tab_3_____________________________________________
         # nastavitve laserja
         frame_laser_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
@@ -648,7 +644,7 @@ class GUI_MSLK:
         self.gumb_nasledna.grid(row=0, column=1)
 
         self.gumb_ena_meritev = tk. Button(
-            frame_gumbi_tab3, text="Meritev trenutnega mesta", command=self.metitev_trenutnega_mesta)  # moras se naredit
+            frame_gumbi_tab3, text="Meritev trenutnega mesta", command=self.meritev_trenutnega_mesta)  # moras se naredit
         self.gumb_ena_meritev.grid(row=1, column=0, columnspan=2)
 
         self.label_stevilo_ciklov = tk.Label(
@@ -741,8 +737,7 @@ class GUI_MSLK:
 
         self.switch()
         # self.spremeni_stanje(self.gumb_plotaj_lastne)
-
-# ===============================Funkcije=========================================
+# =================================Funkcije===========================================
     def connect(self):
         """funkcija skrbi za vspostavitev povezave z RPi"""
         def real_connect():
@@ -816,7 +811,8 @@ class GUI_MSLK:
         self.loaded_data_filename = tk.filedialog.askopenfilenames(
             filetypes=(('numpy files', '*.npy'), ('All files', '*.*')))
         self.text_data_for_plot.set(self.loaded_data_filename)
-        print(self.loaded_data_filename[0])#spodaj odstrani naredi nove podatke
+        # spodaj odstrani naredi nove podatke
+        print(self.loaded_data_filename[0])
         self.data_freq, self.data_frf, self.data_exc, self.data_h = np.load(
             self.loaded_data_filename[0], allow_pickle=True)
         self.data_ciklov = np.shape(self.data_frf)[0]
@@ -1188,7 +1184,7 @@ class GUI_MSLK:
         self.stslabel.configure(text="Vse tarče odstranjene")
         self.imgshow()
 
-# _______________________________Threading______________________________________
+    # _______________________________Threading______________________________________
     """funkcije so namenjene temu da bi stvari lahko delovale sočasno, večino 
     jih ne deluje pravilno..."""
 
@@ -1203,16 +1199,13 @@ class GUI_MSLK:
         self.prekini = False
         threading.Thread(target=self.zacni_meritev()).start()
 
-    # def gui_handler_zajem(self):
-    #     threading.Thread(target=self.zajem_podatkov()).start()
+    def meritev_trenutnega_mesta(self):
+        if self.var_kladivo.get() == True:
+            self.meritev_trenutnega_mesta_kladivo()
+        else:
+            threading.Thread(target=self.meritev_trenutnega_mesta_silomer()).start()
 
-    # def zajem_podatkov(self):
-    #     self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
-
-    def metitev_trenutnega_mesta(self):
-        threading.Thread(target=self.real_meritev_trenutnega_mesta()).start()
-
-# ____________________________________________________________________________
+    # ____________________________________________________________________________
 
     def pomik_na_nasledno_tarčo(self):
         """Funkcija pomakne laser na naslednjo tarčo v seznamu tarč"""
@@ -1291,7 +1284,7 @@ class GUI_MSLK:
         else:
             self.scanner.meritev.f2 = float(self.entry_silomer_faktor2.get())
 
-    def real_meritev_trenutnega_mesta(self):
+    def meritev_trenutnega_mesta_silomer(self):
         """Funkcija za izvajanje meritve, aktiviran je preko threading"""
         self.pridobi_zahteve_merjenja()
         toc = time.time()
@@ -1324,74 +1317,136 @@ class GUI_MSLK:
             if self.append_to_file == False:
                 file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
                 np.save(file, self.frf.get_FRF())
-    #     return frf
-    # #threading.Thread(target=real_meritev_trenutnega_mesta).start()
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     future = executor.submit(real_meritev_trenutnega_mesta)
-    #     return_value = future.result()
-    # return return_value
 
-    def zacni_meritev(self):
+    
 
-        if self.var_kladivo.get()==True:
-            self.meritev_s_kladivom()
+        if self.var_kladivo.get() == True:
+            self.začni_zajem_kladivo()
         else:
             self.meritev_s_silomerom()
-            
-    def končaj_zajem_kladivom(self):
-        self.stop_zajemanje_kladivom=True
+
+    def meritev_trenutnega_mesta_kladivo(self):
+        self.pridobi_zahteve_merjenja()
+        self.scanner.meritev.continuous_bool = True
+        self.scanner.meritev.connect()
+        self.t = np.linspace(0, self.scanner.meritev.st_vzorcev /
+                             self.scanner.meritev.frekvenca, self.scanner.meritev.st_vzorcev)
+        print(len(self.t))
+        self.meritev_s_kladivom()
+        self.triger = False
+        self.serija0 = False
+        self.objek_je_mirn = False
 
     def meritev_s_kladivom(self):
-        if self.objek_je_mirn==False:
-            self.pridobi_zahteve_merjenja()
-            self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
-            self.update_grafe(self.t, self.exc, self.h,1, 1)
+        """funkcija za pretočno zajemanje podatkov"""
+        # potrebno dodat za določanje preko GUI
+        triger_val = 2.2
+        pogoj_mirnosti = 0.25
+        abs_v = float(self.entry_laser_v.get())
 
-        #določanje ali je objekt dovolj miren
-        v_max = np.max(self.h)
-        v_min = np.min(self.h)
-        abs_v=v_max-v_min
-        if abs_v<=0.3*float(self.entry_laser_v.get()) or self.objek_je_mirn:
-            if self.objek_je_mirn==False:
+        if self.objek_je_mirn == False:
+            samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
+            if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
+                data = self.scanner.meritev.task.read(
+                    self.scanner.meritev.st_vzorcev)
+                self.exc = np.array(data[1])
+                self.h = np.array(
+                    data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
+                self.update_grafe(self.t, self.exc, self.h, 1, 1)
+                # shranjevanje za serijo-1
+                self.exc_m1 = np.array(self.exc)
+                self.h_m1 = np.array(self.h)
+                v_max = np.max(self.h)
+                v_min = np.min(self.h)
+                abs_v = v_max-v_min
+                self.stslabel.configure(text=f"Objekt se mora umiriti. Trenutno max razlika hitrosti {abs_v}")
+
+        # določanje ali je objekt dovolj miren
+        if abs_v <= pogoj_mirnosti*float(self.entry_laser_v.get()) or self.objek_je_mirn:
+
+            # zapiska samo prvič ko zazna da je objekt dovolj miren
+            if self.objek_je_mirn == False:
                 self.beep_pripravljen_za_meritev()
-                self.scanner.meritev.čas = 10
-                self.objek_je_mirn=True
-            self.beep_start()
-            self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
-            self.update_grafe(self.t, self.exc, self.h,1, 1)
-            triger_val = 2
-            #preverjanje ali je bil sprožen triger
-            if np.max(self.exc)>triger_val:
-                indeks_triger = np.argmax(self.exc > float(triger_val))
-                nazaj=int(0.01*self.scanner.meritev.frekvenca)
-                st_vzorcev = int(self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
-                print(indeks_triger-nazaj,indeks_triger-nazaj+st_vzorcev)
-                self.exc = self.exc[indeks_triger-nazaj:indeks_triger-nazaj+st_vzorcev]
-                self.h = self.h[indeks_triger-nazaj:indeks_triger-nazaj+st_vzorcev]
-                self.t = self.t[:st_vzorcev]
-                print(len(self.exc),len(self.h),len(self.t))
-                self.frf = FRF(sampling_freq=1/self.t[1],
-                               exc=self.exc,
-                               resp=self.h,
-                               resp_type='v',
-                               frf_type=self.variable_typ.get(),
-                               exc_window=self.variable_okno_exc.get(),
-                               resp_window=self.variable_okno_h.get(),
-                               n_averages=int(self.entry_povprečenje.get()),
-                               resp_delay=float(self.entry_laser_delay.get()))
+                self.objek_je_mirn = True
+                self.stslabel.configure(text="Objekt je dovolj miren za udarec")
 
-                self.update_grafe(self.t, self.exc, self.h,
-                                  self.frf.get_f_axis(), self.frf.get_FRF())
-                self.prekini=True
-        else:
+            # pobiranje podatkov iz kartice serija0
+            samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
+            if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
+                data = self.scanner.meritev.task.read(
+                    self.scanner.meritev.st_vzorcev)
+                self.exc = np.array(data[1])
+                self.h = np.array(
+                    data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
+                self.update_grafe(self.t, self.exc, self.h, 1, 1)
+
+                # ko je enkrat sprožen da je sprožen celotn loop
+                if np.max(self.exc) > triger_val:
+                    self.triger = True
+
+                if self.triger:
+                    #Če serija0 še in zabeležena jo zabeleži drugače, naredi meritev in frf
+                    if self.serija0==False:
+                        self.exc0 = np.concatenate((self.exc_m1, self.exc), axis=None)
+                        self.h0 = np.concatenate((self.h_m1, self.h), axis=None)
+                        self.serija0=True
+                    else:
+                        #serija0 je bila za beležena potrebno je posneti še serijo 1
+                        self.exc = np.concatenate((self.exc0, self.exc), axis=None)
+                        self.h = np.concatenate((self.h0, self.h), axis=None)
+                        # nadalna obdelava - iskanje kje je bil sprožen triger
+                        indeks_triger = np.argmax(self.exc > float(triger_val))
+                        # vračanje nazaj od sprožitve 0.01s
+                        nazaj = int(0.01*self.scanner.meritev.frekvenca)
+                        st_vzorcev = int(
+                            self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
+                        # obrezovanje na meritev
+                        self.exc = self.exc[indeks_triger -
+                                            nazaj:indeks_triger-nazaj+st_vzorcev]
+                        self.h = self.h[indeks_triger -
+                                        nazaj:indeks_triger-nazaj+st_vzorcev]
+                        # naredi se objekt frf
+                        self.frf = FRF(sampling_freq=1/self.t[1],
+                                       exc=self.exc,
+                                       resp=self.h,
+                                       resp_type='v',
+                                       frf_type=self.variable_typ.get(),
+                                       exc_window=self.variable_okno_exc.get(),
+                                       resp_window=self.variable_okno_h.get(),
+                                       n_averages=int(
+                                           self.entry_povprečenje.get()),
+                                       resp_delay=float(self.entry_laser_delay.get()))
+
+                        self.update_grafe(
+                            self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
+                        
+                        #prevei še če je dvojni udarec
+                        if  self.frf.is_data_ok(self.exc,self.h):
+                            self.prekini = True
+                            self.stslabel.configure(text="Meritev je ok.")    
+                        else:
+                            self.beep_double()
+                            self.stslabel.configure(text="Meritev ni dobra.")
+                        self.triger = False
+                        self.serija0 = False
+                        self.objek_je_mirn = False
+
+                else:
+                    #če triger ni sprožen shrani serijo kot m1 (beri kot -1)
+                    self.exc_m1 = np.array(self.exc)
+                    self.h_m1 = np.array(self.h)
+                    
+
+        if self.prekini:
+            self.stslabel.configure(text="Meritev prekinjena")
+            self.scanner.meritev.disconnect()
+            self.triger = False
+            self.serija0 = False
             self.objek_je_mirn = False
-        
-        if self.prekini == False:
+        else:
             self.master.after(10, self.meritev_s_kladivom)
-        else:
-            self.objek_je_mirn = False
 
-    def meritev_s_silomerom(self):
+    def zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
         if self.var_save.get() == 1:
@@ -1417,7 +1472,7 @@ class GUI_MSLK:
                 self.image = self.scanner.narisi_tarce(self.image, self.tarče)
                 self.imgshow()
                 self.stslabel.configure(text=f"Izvajanje {c+1} cikla, meritev {i+1} vzorca.")
-                self.metitev_trenutnega_mesta()
+                self.meritev_trenutnega_mesta()
                 frf_c.append(self.frf.get_FRF()[1:])
                 if self.prekini == True:
                     break
@@ -1440,7 +1495,7 @@ class GUI_MSLK:
 
         if self.var_save.get() == 1:
             np.save(file_opend, (self.data_freq,
-                                 self.data_frf))#, self.data_exc, self.data_h))
+                                 self.data_frf))  # , self.data_exc, self.data_h))
             self.append_to_file = False
 
     def prekini_meritev(self):
@@ -1448,7 +1503,7 @@ class GUI_MSLK:
         self.prekini = True
         print("prekini")
 
-#________________________________Beeps__________________________________________
+# ________________________________Beeps__________________________________________
     def beep_pripravljen_za_meritev(self):
         frequency1 = 2500  # Set Frequency To 2500 Hertz
         duration1 = 400  # Set Duration To 1000 ms == 1 second
@@ -1468,8 +1523,8 @@ class GUI_MSLK:
     def beep_start(self):
         frequency = 1900
         duration = 250
-        winsound.Beep(frequency,duration)
-        winsound.Beep(frequency,duration)
+        winsound.Beep(frequency, duration)
+        winsound.Beep(frequency, duration)
 
 
 root = tk.Tk()
