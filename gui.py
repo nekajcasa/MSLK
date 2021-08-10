@@ -300,7 +300,7 @@ class GUI_MSLK:
             master=frame_ni_nastavitve, text="Save", command=self.save_ni)
         ni_nast_gumb2.grid(row=5, column=1)
 #___________________________________tab_3_____________________________________________
-        # nastavitve laserja
+    # nastavitve laserja
         frame_laser_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
         frame_laser_nastavitve.grid(row=0, column=0)
@@ -349,7 +349,7 @@ class GUI_MSLK:
         self.entry_laser_delay.grid(row=5, column=1)
         self.entry_laser_delay.insert(0, self.nastavitve["zamik laser"])
 
-        # nastavitve silomera/kladiva
+    # nastavitve silomera/kladiva
         frame_silomer_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
         frame_silomer_nastavitve.grid(row=1, column=0)
@@ -399,6 +399,22 @@ class GUI_MSLK:
         self.entry_silomer_faktor2 = tk.Entry(master=frame_silomer_nastavitve)
         self.entry_silomer_faktor2.grid(row=4, column=1)
         self.entry_silomer_faktor2.insert(0, self.nastavitve["f2"])
+
+        #faktor mirnosti predstavlja procent merilnega območja znotraj katerega
+        #mora biti max raspon izmerjenih hitrosti da se objekt smatra za mirnega
+        label_kriterij_mirnosti = tk.Label(frame_silomer_nastavitve,text="Faktor mirnosti:")
+        label_kriterij_mirnosti.grid(row=5,column=0)
+
+        self.entry_kriterij_mirnosti = tk.Entry(frame_silomer_nastavitve)
+        self.entry_kriterij_mirnosti.grid(row=5,column=1)
+        self.entry_kriterij_mirnosti.insert(0,"0.1")
+
+        label_trigger_value = tk.Label(frame_silomer_nastavitve,text="Trigger value")
+        label_trigger_value.grid(row=6,column=0)
+
+        self.entry_trigger_value = tk.Entry(frame_silomer_nastavitve)
+        self.entry_trigger_value.grid(row=6,column=1)
+        self.entry_trigger_value.insert(0,"5")
 
         self.urejanje_silomer_kladivo()
 
@@ -542,7 +558,7 @@ class GUI_MSLK:
         self.entry_path.grid(row=11, column=1)
         self.entry_path.insert(0, self.nastavitve["dir"])
 
-        # plotanje
+    # plotanje
         frame_tab3_plotanje = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
         frame_tab3_plotanje.grid(row=0, column=1, rowspan=4)
@@ -630,7 +646,7 @@ class GUI_MSLK:
         self.graph_lastne_oblike._tkcanvas.pack(
             side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
-        # Kontrole za začetek merive
+    # Kontrole za začetek merive
         frame_gumbi_tab3 = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
         frame_gumbi_tab3.grid(row=0, column=2)
@@ -673,7 +689,7 @@ class GUI_MSLK:
         self.gumb_plotaj_lastne.grid(row=4, column=1)
         self.spremeni_stanje(self.gumb_plotaj_lastne)
 
-        # Loadanje in upravljanje s ploti
+    # Loadanje in upravljanje s ploti
         frame_upravlanje_plotov_tab3 = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
         frame_upravlanje_plotov_tab3.grid(row=1, column=2)
@@ -735,8 +751,15 @@ class GUI_MSLK:
         self.gumb_mesto_nasljednje.grid(row=6, column=2)
         self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
+    #generiranje signalov
+        frame_generiranje_signalov_tab3 = tk.Frame(
+            master=self.tab3, relief=tk.RAISED, borderwidth=1)
+        frame_generiranje_signalov_tab3.grid(row=2, column=2)
+
+        label_generiranje_signalov = tk.Label(frame_generiranje_signalov_tab3,text="Generiranje signalov")
+        label_generiranje_signalov.grid(row=0,column=0,columnspan=2)
+
         self.switch()
-        # self.spremeni_stanje(self.gumb_plotaj_lastne)
 # =================================Funkcije===========================================
     def connect(self):
         """funkcija skrbi za vspostavitev povezave z RPi"""
@@ -932,6 +955,8 @@ class GUI_MSLK:
         """aktivacija in deaktivacija ustreznih oken glede na to s čim se miri"""
         if self.var_kladivo.get() == True:
             self.entry_silomer_faktor2['state'] = 'disabled'
+            self.entry_kriterij_mirnosti['state'] = 'normal'
+            self.entry_trigger_value['state'] = 'normal'
             self.text_kanal_sk.set("Kanal kladiva")
             self.entry_silomer_kanal.delete(0, 'end')
             self.entry_silomer_kanal.insert(0, self.nastavitve["ai2"])
@@ -941,6 +966,8 @@ class GUI_MSLK:
 
         else:
             self.entry_silomer_faktor2['state'] = 'normal'
+            self.entry_kriterij_mirnosti['state'] = 'disabled'
+            self.entry_trigger_value['state'] = 'disabled'
             self.text_kanal_sk.set("Kanal silomera")
             self.entry_silomer_kanal.delete(0, 'end')
             self.entry_silomer_kanal.insert(0, self.nastavitve["ai1"])
@@ -1192,11 +1219,8 @@ class GUI_MSLK:
         self.change_state()
         threading.Thread(target=self.zajemanje_slike).start()
 
-    def meritev_trenutnega_mesta(self):
-        if self.var_kladivo.get() == True:
-            self.meritev_trenutnega_mesta_kladivo()
-        else:
-            self.meritev_trenutnega_mesta_silomer()
+    def zacni_meritev(self):
+        threading.Thread(target=self.real_zacni_meritev).start()
 
     # ____________________________________________________________________________
 
@@ -1277,6 +1301,14 @@ class GUI_MSLK:
         else:
             self.scanner.meritev.f2 = float(self.entry_silomer_faktor2.get())
 
+#______________________Funkcije_vezane_na_pridobivanje_meritev____________________
+
+    def meritev_trenutnega_mesta(self):
+        if self.var_kladivo.get() == True:
+            self.meritev_trenutnega_mesta_kladivo()
+        else:
+            self.meritev_trenutnega_mesta_silomer()
+
     def meritev_trenutnega_mesta_silomer(self):
         """Funkcija za izvajanje meritve, aktiviran je preko threading"""
         self.pridobi_zahteve_merjenja()
@@ -1324,11 +1356,11 @@ class GUI_MSLK:
         self.thread_meritev_kladivo=threading.Thread(target=self.meritev_s_kladivom)
         self.thread_meritev_kladivo.start()
 
-
     def meritev_s_kladivom(self):
         """funkcija za pretočno zajemanje podatkov"""
-        # potrebno dodat za določanje preko GUI
+        
         while True:
+            # potrebno dodat za določanje preko GUI
             triger_val = 2.2
             pogoj_mirnosti = 0.25
             abs_v = float(self.entry_laser_v.get())
@@ -1439,11 +1471,6 @@ class GUI_MSLK:
                 self.prekini = False
                 #self.result_available.set()
                 break
-            # else:
-            #     self.master.after(10, self.meritev_s_kladivom)
-
-    def zacni_meritev(self):
-        threading.Thread(target=self.real_zacni_meritev).start()
 
     def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
