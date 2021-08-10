@@ -656,7 +656,7 @@ class GUI_MSLK:
         self.entry_stevilo_ciklov.insert(0, self.nastavitve["število ciklov"])
 
         self.gumb_začni_meritev = tk. Button(
-            frame_gumbi_tab3, text="Začni meritev", command=self.gui_handler)
+            frame_gumbi_tab3, text="Začni meritev", command=self.zacni_meritev)
         self.gumb_začni_meritev.grid(row=3, column=0)
 
         self.gumb_prekini_meritev = tk. Button(
@@ -1192,18 +1192,11 @@ class GUI_MSLK:
         self.change_state()
         threading.Thread(target=self.zajemanje_slike).start()
 
-    def gui_handler_grafi(self, exc, h, t, frf):
-        threading.Thread(target=self.update_grafe(exc, h, t, frf)).start()
-
-    def gui_handler(self):
-        self.prekini = False
-        threading.Thread(target=self.zacni_meritev()).start()
-
     def meritev_trenutnega_mesta(self):
         if self.var_kladivo.get() == True:
             self.meritev_trenutnega_mesta_kladivo()
         else:
-            threading.Thread(target=self.meritev_trenutnega_mesta_silomer()).start()
+            self.meritev_trenutnega_mesta_silomer()
 
     # ____________________________________________________________________________
 
@@ -1318,13 +1311,6 @@ class GUI_MSLK:
                 file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
                 np.save(file, self.frf.get_FRF())
 
-    
-
-        if self.var_kladivo.get() == True:
-            self.začni_zajem_kladivo()
-        else:
-            self.meritev_s_silomerom()
-
     def meritev_trenutnega_mesta_kladivo(self):
         self.pridobi_zahteve_merjenja()
         self.scanner.meritev.continuous_bool = True
@@ -1416,14 +1402,18 @@ class GUI_MSLK:
                                        n_averages=int(
                                            self.entry_povprečenje.get()),
                                        resp_delay=float(self.entry_laser_delay.get()))
-
+                        print("tukaj sem 1")
                         self.update_grafe(
                             self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
                         
                         #prevei še če je dvojni udarec
-                        if  self.frf.is_data_ok(self.exc,self.h):
+                        if  True:#self.frf.is_data_ok(self.exc,self.h):
                             self.prekini = True
-                            self.stslabel.configure(text="Meritev je ok.")    
+                            self.stslabel.configure(text="Meritev je ok.")
+                            if self.var_save.get() == 1:
+                                if self.append_to_file == False:
+                                    file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
+                                    np.save(file, self.frf.get_FRF())    
                         else:
                             self.beep_double()
                             self.stslabel.configure(text="Meritev ni dobra.")
@@ -1443,6 +1433,7 @@ class GUI_MSLK:
             self.triger = False
             self.serija0 = False
             self.objek_je_mirn = False
+            self.prekini=False
         else:
             self.master.after(10, self.meritev_s_kladivom)
 
@@ -1473,6 +1464,7 @@ class GUI_MSLK:
                 self.imgshow()
                 self.stslabel.configure(text=f"Izvajanje {c+1} cikla, meritev {i+1} vzorca.")
                 self.meritev_trenutnega_mesta()
+                print("tukaj sam 2")
                 frf_c.append(self.frf.get_FRF()[1:])
                 if self.prekini == True:
                     break
