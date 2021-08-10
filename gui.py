@@ -1317,127 +1317,135 @@ class GUI_MSLK:
         self.scanner.meritev.connect()
         self.t = np.linspace(0, self.scanner.meritev.st_vzorcev /
                              self.scanner.meritev.frekvenca, self.scanner.meritev.st_vzorcev)
-        print(len(self.t))
-        self.meritev_s_kladivom()
         self.triger = False
         self.serija0 = False
         self.objek_je_mirn = False
+        #self.result_available = threading.Event()
+        self.thread_meritev_kladivo=threading.Thread(target=self.meritev_s_kladivom)
+        self.thread_meritev_kladivo.start()
+
 
     def meritev_s_kladivom(self):
         """funkcija za pretočno zajemanje podatkov"""
         # potrebno dodat za določanje preko GUI
-        triger_val = 2.2
-        pogoj_mirnosti = 0.25
-        abs_v = float(self.entry_laser_v.get())
+        while True:
+            triger_val = 2.2
+            pogoj_mirnosti = 0.25
+            abs_v = float(self.entry_laser_v.get())
 
-        if self.objek_je_mirn == False:
-            samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
-            if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
-                data = self.scanner.meritev.task.read(
-                    self.scanner.meritev.st_vzorcev)
-                self.exc = np.array(data[1])
-                self.h = np.array(
-                    data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
-                self.update_grafe(self.t, self.exc, self.h, 1, 1)
-                # shranjevanje za serijo-1
-                self.exc_m1 = np.array(self.exc)
-                self.h_m1 = np.array(self.h)
-                v_max = np.max(self.h)
-                v_min = np.min(self.h)
-                abs_v = v_max-v_min
-                self.stslabel.configure(text=f"Objekt se mora umiriti. Trenutno max razlika hitrosti {abs_v}")
-
-        # določanje ali je objekt dovolj miren
-        if abs_v <= pogoj_mirnosti*float(self.entry_laser_v.get()) or self.objek_je_mirn:
-
-            # zapiska samo prvič ko zazna da je objekt dovolj miren
             if self.objek_je_mirn == False:
-                self.beep_pripravljen_za_meritev()
-                self.objek_je_mirn = True
-                self.stslabel.configure(text="Objekt je dovolj miren za udarec")
-
-            # pobiranje podatkov iz kartice serija0
-            samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
-            if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
-                data = self.scanner.meritev.task.read(
-                    self.scanner.meritev.st_vzorcev)
-                self.exc = np.array(data[1])
-                self.h = np.array(
-                    data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
-                self.update_grafe(self.t, self.exc, self.h, 1, 1)
-
-                # ko je enkrat sprožen da je sprožen celotn loop
-                if np.max(self.exc) > triger_val:
-                    self.triger = True
-
-                if self.triger:
-                    #Če serija0 še in zabeležena jo zabeleži drugače, naredi meritev in frf
-                    if self.serija0==False:
-                        self.exc0 = np.concatenate((self.exc_m1, self.exc), axis=None)
-                        self.h0 = np.concatenate((self.h_m1, self.h), axis=None)
-                        self.serija0=True
-                    else:
-                        #serija0 je bila za beležena potrebno je posneti še serijo 1
-                        self.exc = np.concatenate((self.exc0, self.exc), axis=None)
-                        self.h = np.concatenate((self.h0, self.h), axis=None)
-                        # nadalna obdelava - iskanje kje je bil sprožen triger
-                        indeks_triger = np.argmax(self.exc > float(triger_val))
-                        # vračanje nazaj od sprožitve 0.01s
-                        nazaj = int(0.01*self.scanner.meritev.frekvenca)
-                        st_vzorcev = int(
-                            self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
-                        # obrezovanje na meritev
-                        self.exc = self.exc[indeks_triger -
-                                            nazaj:indeks_triger-nazaj+st_vzorcev]
-                        self.h = self.h[indeks_triger -
-                                        nazaj:indeks_triger-nazaj+st_vzorcev]
-                        # naredi se objekt frf
-                        self.frf = FRF(sampling_freq=1/self.t[1],
-                                       exc=self.exc,
-                                       resp=self.h,
-                                       resp_type='v',
-                                       frf_type=self.variable_typ.get(),
-                                       exc_window=self.variable_okno_exc.get(),
-                                       resp_window=self.variable_okno_h.get(),
-                                       n_averages=int(
-                                           self.entry_povprečenje.get()),
-                                       resp_delay=float(self.entry_laser_delay.get()))
-                        print("tukaj sem 1")
-                        self.update_grafe(
-                            self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
-                        
-                        #prevei še če je dvojni udarec
-                        if  True:#self.frf.is_data_ok(self.exc,self.h):
-                            self.prekini = True
-                            self.stslabel.configure(text="Meritev je ok.")
-                            if self.var_save.get() == 1:
-                                if self.append_to_file == False:
-                                    file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
-                                    np.save(file, self.frf.get_FRF())    
-                        else:
-                            self.beep_double()
-                            self.stslabel.configure(text="Meritev ni dobra.")
-                        self.triger = False
-                        self.serija0 = False
-                        self.objek_je_mirn = False
-
-                else:
-                    #če triger ni sprožen shrani serijo kot m1 (beri kot -1)
+                samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
+                if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
+                    data = self.scanner.meritev.task.read(
+                        self.scanner.meritev.st_vzorcev)
+                    self.exc = np.array(data[1])
+                    self.h = np.array(
+                        data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
+                    self.update_grafe(self.t, self.exc, self.h, 1, 1)
+                    # shranjevanje za serijo-1
                     self.exc_m1 = np.array(self.exc)
                     self.h_m1 = np.array(self.h)
-                    
+                    v_max = np.max(self.h)
+                    v_min = np.min(self.h)
+                    abs_v = v_max-v_min
+                    self.stslabel.configure(text=f"Objekt se mora umiriti. Trenutno max razlika hitrosti {abs_v}")
 
-        if self.prekini:
-            self.stslabel.configure(text="Meritev prekinjena")
-            self.scanner.meritev.disconnect()
-            self.triger = False
-            self.serija0 = False
-            self.objek_je_mirn = False
-            self.prekini=False
-        else:
-            self.master.after(10, self.meritev_s_kladivom)
+            # določanje ali je objekt dovolj miren
+            if abs_v <= pogoj_mirnosti*float(self.entry_laser_v.get()) or self.objek_je_mirn:
+
+                # zapiska samo prvič ko zazna da je objekt dovolj miren
+                if self.objek_je_mirn == False:
+                    self.beep_pripravljen_za_meritev()
+                    self.objek_je_mirn = True
+                    self.stslabel.configure(text="Objekt je dovolj miren za udarec")
+
+                # pobiranje podatkov iz kartice serija0
+                samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
+                if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
+                    data = self.scanner.meritev.task.read(
+                        self.scanner.meritev.st_vzorcev)
+                    self.exc = np.array(data[1])
+                    self.h = np.array(
+                        data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
+                    self.update_grafe(self.t, self.exc, self.h, 1, 1)
+
+                    # ko je enkrat sprožen da je sprožen celotn loop
+                    if np.max(self.exc) > triger_val:
+                        self.triger = True
+
+                    if self.triger:
+                        #Če serija0 še in zabeležena jo zabeleži drugače, naredi meritev in frf
+                        if self.serija0==False:
+                            self.exc0 = np.concatenate((self.exc_m1, self.exc), axis=None)
+                            self.h0 = np.concatenate((self.h_m1, self.h), axis=None)
+                            self.serija0=True
+                        else:
+                            #serija0 je bila za beležena potrebno je posneti še serijo 1
+                            self.exc = np.concatenate((self.exc0, self.exc), axis=None)
+                            self.h = np.concatenate((self.h0, self.h), axis=None)
+                            # nadalna obdelava - iskanje kje je bil sprožen triger
+                            indeks_triger = np.argmax(self.exc > float(triger_val))
+                            # vračanje nazaj od sprožitve 0.01s
+                            nazaj = int(0.01*self.scanner.meritev.frekvenca)
+                            st_vzorcev = int(
+                                self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
+                            # obrezovanje na meritev
+                            self.exc = self.exc[indeks_triger -
+                                                nazaj:indeks_triger-nazaj+st_vzorcev]
+                            self.h = self.h[indeks_triger -
+                                            nazaj:indeks_triger-nazaj+st_vzorcev]
+                            # naredi se objekt frf
+                            self.frf = FRF(sampling_freq=1/self.t[1],
+                                           exc=self.exc,
+                                           resp=self.h,
+                                           resp_type='v',
+                                           frf_type=self.variable_typ.get(),
+                                           exc_window=self.variable_okno_exc.get(),
+                                           resp_window=self.variable_okno_h.get(),
+                                           n_averages=int(
+                                               self.entry_povprečenje.get()),
+                                           resp_delay=float(self.entry_laser_delay.get()))
+                            self.update_grafe(
+                                self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
+                            
+                            #prevei še če je dvojni udarec
+                            if  True:#self.frf.is_data_ok(self.exc,self.h):
+                                self.prekini = True
+                                self.stslabel.configure(text="Meritev je ok.")
+                                if self.var_save.get() == 1:
+                                    if self.append_to_file == False:
+                                        file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
+                                        np.save(file, self.frf.get_FRF())    
+                            else:
+                                self.beep_double()
+                                self.stslabel.configure(text="Meritev ni dobra.")
+                            self.triger = False
+                            self.serija0 = False
+                            self.objek_je_mirn = False
+
+                    else:
+                        #če triger ni sprožen shrani serijo kot m1 (beri kot -1)
+                        self.exc_m1 = np.array(self.exc)
+                        self.h_m1 = np.array(self.h)
+                        
+
+            if self.prekini:
+                self.stslabel.configure(text="Meritev prekinjena")
+                self.scanner.meritev.disconnect()
+                print("povezava prekinjena")
+                self.triger = False
+                self.serija0 = False
+                self.objek_je_mirn = False
+                self.prekini = False
+                #self.result_available.set()
+                break
+            # else:
+            #     self.master.after(10, self.meritev_s_kladivom)
 
     def zacni_meritev(self):
+        threading.Thread(target=self.real_zacni_meritev).start()
+
+    def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
         if self.var_save.get() == 1:
@@ -1464,7 +1472,8 @@ class GUI_MSLK:
                 self.imgshow()
                 self.stslabel.configure(text=f"Izvajanje {c+1} cikla, meritev {i+1} vzorca.")
                 self.meritev_trenutnega_mesta()
-                print("tukaj sam 2")
+                if self.var_kladivo.get() == True:
+                    self.thread_meritev_kladivo.join()   
                 frf_c.append(self.frf.get_FRF()[1:])
                 if self.prekini == True:
                     break
