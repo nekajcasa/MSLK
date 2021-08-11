@@ -45,7 +45,7 @@ class GUI_MSLK:
                        "port": 22,
                        "username": "pi",
                        "password": "pi",
-                       "skripta": "Desktop/laserV3.py",
+                       "skripta": "Desktop/RPi_MSLK.py",
                        "ao0": "cDAQ10Mod1/ao0",
                        "ao1": "cDAQ10Mod1/ao1",
                        "ai0": "cDAQ10Mod3/ai0",
@@ -816,14 +816,14 @@ class GUI_MSLK:
 
             if self.povezava_vspostavljena_boolean == False:
                 self.stslabel.configure(text="Vpostavljanje povezave")
-                Pi = MSLK.RPi(hostname=self.nastavitve["hostname"],
-                              port=self.nastavitve["port"],
-                              username=self.nastavitve["username"],
-                              password=self.nastavitve["password"],
-                              skripta=self.nastavitve["skripta"])
+                Pi = MSLK.RPi(hostname=self.vnos1.get(),
+                              port=self.vnos2.get(),
+                              username=self.vnos3.get(),
+                              password=self.vnos4.get(),
+                              skripta=self.vnos5.get())
                 pi_kamera = MSLK.Camera(Pi)
                 laser = MSLK.LaserHead(
-                    pi_kamera, ch1=self.nastavitve["ao0"], ch2=self.nastavitve["ao1"])
+                    pi_kamera, ch1=self.vnos1_ni.get(), ch2=self.vnos2_ni.get())
                 meritev = MSLK.Meritev()
                 položaj_zrcal = np.array([self.U_x, self.U_y])
                 self.scanner = MSLK.Scanner(
@@ -1007,7 +1007,7 @@ class GUI_MSLK:
             self.entry_kriterij_mirnosti['state'] = 'normal'
             self.entry_trigger_value['state'] = 'normal'
             self.entry_pred_trigger['state'] = 'normal'
-            self.entry_povprečenje["state"] = "disabled"
+            
  
             self.text_kanal_sk.set("Kanal kladiva")
             self.entry_silomer_kanal.delete(0, 'end')
@@ -1026,6 +1026,7 @@ class GUI_MSLK:
             self.entry_povprečenje.delete(0,"end")
             self.entry_povprečenje.insert(0, 
                 self.nastavitve["vzorcev za povprečenje kladivo"])
+            self.entry_povprečenje["state"] = "disabled"
             self.variable_okno_exc.set(self.okna[self.nastavitve["okno exc kladivo"]])
             self.entry_okno_exc_value.delete(0,"end")
             self.entry_okno_exc_value.insert(0,self.nastavitve["value exc kladivo"])
@@ -1123,6 +1124,7 @@ class GUI_MSLK:
 
         self.update_grafe([], 1, 1, self.data_freq,
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.tabControltab3.select(self.tab3tab2)
 
     def cikelj_naprej(self):
         """Prikažejo se ploti naslednjega cikla"""
@@ -1137,6 +1139,7 @@ class GUI_MSLK:
 
         self.update_grafe([], 1, 1, self.data_freq,
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.tabControltab3.select(self.tab3tab2)
 
     def mesto_nazaj(self):
         """prikažejo se ploti naslednjega mesta"""
@@ -1151,6 +1154,7 @@ class GUI_MSLK:
 
         self.update_grafe([], 1, 1, self.data_freq,
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.tabControltab3.select(self.tab3tab2)
 
     def mesto_naprej(self):
         """prikažejo se ploti prejšnega mesta"""
@@ -1165,6 +1169,7 @@ class GUI_MSLK:
 
         self.update_grafe([], 1, 1, self.data_freq,
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.tabControltab3.select(self.tab3tab2)
 
     def kalibracija_laserja(self):
         """Izvede se ponova kalibracija laseraj na podlagi vpisanih vrednosti"""
@@ -1301,7 +1306,6 @@ class GUI_MSLK:
             self.nastavitve["value exc silomer"]= float(self.entry_okno_exc_value.get())
             self.nastavitve["value h silomer"]=float(self.entry_okno_h_value.get())
         else:
-            print("shranjeno")
             self.nastavitve["osnovna frekvenca kladivo"] = int(self.entry_osnovna_frekvenca.get())
             self.nastavitve["čas kladivo"] = float(self.entry_cas_meritve.get())
             self.nastavitve["vzorcev za povprečenje kladivo"]= int(self.entry_povprečenje.get())
@@ -1375,7 +1379,6 @@ class GUI_MSLK:
         else:
             self.stslabel.configure(
                 text="Clicked ouside axes bounds but inside plot window")
-        print(self.tarče)
 
     def imgshow(self):
         """Funkcija skrbi za prikaz slike pridobljene iz RPi"""
@@ -1418,27 +1421,37 @@ class GUI_MSLK:
         threading.Thread(target=self.real_zacni_meritev).start()
 
     # ____________________________________________________________________________
+    def korekcija_tarč(self,se_dovoljen_premik=1):
+        #prva slika
+        img0=self.image
+        #druga slika
+        self.image=self.scanner.kamera.req("img")
+        img1=self.image
+        translation = self.scanner.img_translation(img0, img1)
+        if np.sqrt(translation[0]**2+translation[1]**2) > se_dovoljen_premik:
+            self.tarče = self.tarče+translation
+            return True
+        else: 
+            return False
+
+    def pomik_na_tarčo(self,i):
+        self.korekcija_tarč()
+        self.image = self.scanner.namesto(self.tarče[i])
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
 
     def pomik_na_nasledno_tarčo(self):
         """Funkcija pomakne laser na naslednjo tarčo v seznamu tarč"""
         self.na_tarči += 1
         i = self.na_tarči % len(self.tarče)
-        cilj = self.tarče[i]
-        self.image = self.scanner.namesto(cilj)
-        self.image = self.scanner.kamera.req("img")
-        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-        self.imgshow()
+        self.pomik_na_tarčo(i)
         self.stslabel.configure(text=f"Premik na tarčo {i+1}.")
 
     def pomik_na_prejšno_tarčo(self):
         """Funkcija pomakne laser na prejšnjo tarčo v seznamu tarč"""
         self.na_tarči -= 1
         i = self.na_tarči % len(self.tarče)
-        cilj = self.tarče[i]
-        self.image = self.scanner.namesto(cilj)
-        self.image = self.scanner.kamera.req("img")
-        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-        self.imgshow()
+        self.pomik_na_tarčo(i)
         self.stslabel.configure(text=f"Premik na tarčo {i+1}.")
 
     def update_grafe(self, t, exc, h, f, frf):
@@ -1497,6 +1510,14 @@ class GUI_MSLK:
             self.scanner.meritev.f2 = float(self.entry_silomer_faktor2.get())
 
 #______________________Funkcije_vezane_na_pridobivanje_meritev____________________
+    def naredi_okna(self):
+        self.okno_exc=self.variable_okno_exc.get()
+        if self.okno_exc!=None:
+            self.okno_exc=self.okno_exc+":"+self.entry_okno_exc_value.get()
+        
+        self.okno_h=self.variable_okno_h.get()
+        if self.okno_exc!=None:
+            self.okno_exc=self.okno_exc+":"+self.entry_okno_exc_value.get()
 
     def meritev_trenutnega_mesta(self):
         if self.var_kladivo.get() == True:
@@ -1523,15 +1544,18 @@ class GUI_MSLK:
 
                 self.update_grafe(self.t, self.exc, self.h,
                                   self.frf.get_f_axis(), self.frf.get_FRF())
+                self.tabControltab3.select(self.tab3tab2)
 
             else:
                 self.exc, self.h, self.t = self.scanner.meritev.naredi_meritev()
                 self.frf.add_data(self.exc, self.h)
                 self.update_grafe(self.t, self.exc, self.h,
                                   self.frf.get_f_axis(), self.frf.get_FRF())
+                self.tabControltab3.select(self.tab3tab2)
 
         self.update_grafe(self.t, self.exc, self.h,
                           self.frf.get_f_axis(), self.frf.get_FRF())
+        self.tabControltab3.select(self.tab3tab2)
         print(time.time()-toc)
         if self.var_save.get() == 1:
             if self.append_to_file == False:
@@ -1557,7 +1581,7 @@ class GUI_MSLK:
         while True:
             triger_val = float(self.entry_trigger_value.get())
             pogoj_mirnosti = float(self.entry_kriterij_mirnosti.get())
-            pred_trigger = float(self.entry_pred_trigger.ger())
+            pred_trigger = float(self.entry_pred_trigger.get())
             abs_v = float(self.entry_laser_v.get())
 
             if self.objek_je_mirn == False:
@@ -1569,6 +1593,7 @@ class GUI_MSLK:
                     self.h = np.array(
                         data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
                     self.update_grafe(self.t, self.exc, self.h, 1, 1)
+                    self.tabControltab3.select(self.tab3tab1)
                     # shranjevanje za serijo-1
                     self.exc_m1 = np.array(self.exc)
                     self.h_m1 = np.array(self.h)
@@ -1595,6 +1620,7 @@ class GUI_MSLK:
                     self.h = np.array(
                         data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
                     self.update_grafe(self.t, self.exc, self.h, 1, 1)
+                    self.tabControltab3.select(self.tab3tab1)
 
                     # ko je enkrat sprožen da je sprožen celotn loop
                     if np.max(self.exc) > triger_val:
@@ -1622,19 +1648,20 @@ class GUI_MSLK:
                             self.h = self.h[indeks_triger -
                                             nazaj:indeks_triger-nazaj+st_vzorcev]
                             # naredi se objekt frf
+                            self.naredi_okna()
                             self.frf = FRF(sampling_freq=1/self.t[1],
                                            exc=self.exc,
                                            resp=self.h,
                                            resp_type='v',
                                            frf_type=self.variable_typ.get(),
-                                           exc_window=self.variable_okno_exc.get(),
-                                           resp_window=self.variable_okno_h.get(),
+                                           exc_window=self.okno_exc,
+                                           resp_window=self.okno_h,
                                            n_averages=int(
                                                self.entry_povprečenje.get()),
                                            resp_delay=float(self.entry_laser_delay.get()))
                             self.update_grafe(
                                 self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
-                            
+                            self.tabControltab3.select(self.tab3tab2)
                             #prevei še če je dvojni udarec
                             if  self.frf.is_data_ok(self.exc,self.h):
                                 self.prekini = True
@@ -1642,13 +1669,13 @@ class GUI_MSLK:
                                 if self.var_save.get() == 1:
                                     if self.append_to_file == False:
                                         file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
-                                        np.save(file, self.frf.get_FRF())
-                                self.pomik_naprej=True    
+                                        np.save(file, self.frf.get_FRF())    
                             else:
                                 self.beep_double()
                                 self.stslabel.configure(text="Meritev ni dobra.")
                             self.triger = False
                             self.serija0 = False
+                            self.objek_je_mirn = False
 
                     else:
                         #če triger ni sprožen shrani serijo kot m1 (beri kot -1)
@@ -1658,13 +1685,7 @@ class GUI_MSLK:
 
             if self.prekini:
                 self.stslabel.configure(text="Meritev prekinjena")
-                self.scanner.meritev.disconnect()
-                print("povezava prekinjena")
-                self.triger = False
-                self.serija0 = False
-                self.objek_je_mirn = False
                 self.prekini = False
-                #self.result_available.set()
                 break
 
         #počaka se še da se objek umiri predno se premakne na naslednjo pozicijo
@@ -1684,10 +1705,9 @@ class GUI_MSLK:
 
             # določanje ali je objekt dovolj miren
             if abs_v <= 1.5*pogoj_mirnosti*float(self.entry_laser_v.get()) or self.objek_je_mirn:
+                self.scanner.meritev.disconnect()
                 break
             
-
-
     def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
@@ -1708,15 +1728,18 @@ class GUI_MSLK:
         for c in range(ciklov):
             frf_c = []
             for i in range(len(self.tarče)):
-                cilj = self.tarče[i]
-                self.image = self.scanner.namesto(cilj)
-                self.image = self.scanner.kamera.req("img")
-                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-                self.imgshow()
+                
                 self.stslabel.configure(text=f"Izvajanje {c+1} cikla, meritev {i+1} vzorca.")
-                self.meritev_trenutnega_mesta()
-                if self.var_kladivo.get() == True:
-                    self.thread_meritev_kladivo.join()   
+                while True:
+                    self.pomik_na_tarčo(i)
+                    self.meritev_trenutnega_mesta()
+                    dp=1
+                    if self.var_kladivo.get():
+                        dp=2
+                        self.thread_meritev_kladivo.join()
+                    if self.korekcija_tarč(dp)==False:
+                        break
+
                 frf_c.append(self.frf.get_FRF()[1:])
                 if self.prekini == True:
                     break

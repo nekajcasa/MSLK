@@ -10,14 +10,14 @@ Program za generiranje datoteke z nastavitvami.
 import pickle
 
 dictionary_data = {"Ux": 2.7,
-                   "Uy": 1.8,
+                   "Uy": 2.0,
                    "Ukal": 0.3,
                    "Upomik": 0.3,
                    "hostname": "pi-kamera",
                    "port": 22,
                    "username": "pi",
                    "password": "pi",
-                   "skripta": "Desktop/laserV3.py",
+                   "skripta": "Desktop/RPi_MSLK.py",
                    "ao0": "cDAQ10Mod1/ao0",
                    "ao1": "cDAQ10Mod1/ao1",
                    "ai0": "cDAQ10Mod3/ai0",
