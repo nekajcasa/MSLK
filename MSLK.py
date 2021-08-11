@@ -166,7 +166,7 @@ class Camera:
         username = self.pi.username
         password = self.pi.password
         # ukaz za zagon programa na RPi
-        command = "python3 "+self.pi.skripta
+        command = "python3 "+self.pi.skripta+" "+socket.gethostbyname(socket.gethostname())
         # povezovanje preko SSH
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -183,6 +183,7 @@ class Camera:
         self.soc.listen(5)
         self.pi_kamera, address = self.soc.accept()
         print(f"povezava na {address}, je bila vspostavljena")
+        #self.pi_kamera.send(bytes("192.168.137.1", "utf-8"))
 
     def req(self, dtyp):
         """možne zahteva slika: "img", pozicija laserja: "loc" """
