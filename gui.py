@@ -1555,7 +1555,6 @@ class GUI_MSLK:
         """funkcija za pretočno zajemanje podatkov"""
         
         while True:
-            # potrebno dodat za določanje preko GUI
             triger_val = float(self.entry_trigger_value.get())
             pogoj_mirnosti = float(self.entry_kriterij_mirnosti.get())
             pred_trigger = float(self.entry_pred_trigger.ger())
@@ -1667,6 +1666,27 @@ class GUI_MSLK:
                 self.prekini = False
                 #self.result_available.set()
                 break
+
+        #počaka se še da se objek umiri predno se premakne na naslednjo pozicijo
+        while True:
+            pogoj_mirnosti = float(self.entry_kriterij_mirnosti.get())
+            abs_v = float(self.entry_laser_v.get())
+
+            if self.objek_je_mirn == False:
+                samplesAvailable = self.scanner.meritev.task._in_stream.avail_samp_per_chan
+                if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
+                    data = self.scanner.meritev.task.read(
+                        self.scanner.meritev.st_vzorcev)
+                    self.h = np.array(
+                        data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
+                    abs_v = np.max(self.h)-np.min(self.h)
+                    self.stslabel.configure(text=f"Objekt se mora umiriti. Pred premikom na naslednje mesto.")
+
+            # določanje ali je objekt dovolj miren
+            if abs_v <= 1.5*pogoj_mirnosti*float(self.entry_laser_v.get()) or self.objek_je_mirn:
+                break
+            
+
 
     def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
