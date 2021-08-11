@@ -24,8 +24,8 @@ class GUI_MSLK:
         self.master = master
         self.master.title("MSLK")
         self.master.iconbitmap("./files/logo.ico")
-        w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-        self.master.geometry("%dx%d+0+0" % (w-100, h-100))
+        # w, h = root.winfo_screenwidth(), root.winfo_screenheight()
+        # self.master.geometry("%dx%d+0+0" % (w-100, h-50))
 
 #_________________________________Status_bar__________________________________________
         frame_info = tk.Frame(self.master, relief=tk.SUNKEN)
@@ -37,46 +37,61 @@ class GUI_MSLK:
         self.progress = ttk.Progressbar(
             frame_info, orient=tk.HORIZONTAL, length=100,  mode='indeterminate')
 #_________________________________Load_data___________________________________________
+        self.backup = {"Ux": 2.7,
+                       "Uy": 1.8,
+                       "Ukal": 0.3,
+                       "Upomik": 0.3,
+                       "hostname": "pi-kamera",
+                       "port": 22,
+                       "username": "pi",
+                       "password": "pi",
+                       "skripta": "Desktop/laserV3.py",
+                       "ao0": "cDAQ10Mod1/ao0",
+                       "ao1": "cDAQ10Mod1/ao1",
+                       "ai0": "cDAQ10Mod3/ai0",
+                       "ai1": "cDAQ10Mod3/ai1",
+                       "ai2": "cDAQ10Mod3/ai3",
+                       "U_max": 4,
+                       "U_min": -4,
+                       "las_v": 20.0,
+                       "zamik laser": 0.00124,
+                       "start silomer/kladivo": True,
+                       "f kladivo":2.273,
+                       "f1": 4.034,
+                       "f2": 9.923,
+                       "kladivo k. mirnosti":0.1,
+                       "trigger value":3.0,
+                       "pred trigger":0.01,
+                       "osnovna frekvenca silomer": 13107200,
+                       "frekvenca vzorčenja silomer": 4,
+                       "čas silomer": 1,
+                       "vzorcev za povprečenje silomer": 5,
+                       "okno exc silomer": 2,
+                       "value exc silomer":0.1,
+                       "okno h silomer": 2,
+                       "value h silomer": 0.1,
+                       "typ silomer": 2,
+                       "osnovna frekvenca kladivo": 13107200,
+                       "frekvenca vzorčenja kladivo": 4,
+                       "čas kladivo": 1,
+                       "vzorcev za povprečenje kladivo": 1,
+                       "okno exc kladivo": 3,
+                       "value exc kladivo": 0.2,
+                       "okno h kladivo": 2,
+                       "value h kladivo":0.1,
+                       "typ kladivo": 2,
+                       "file_name": "meritev",
+                       "dir": "C:",
+                       "število ciklov": 1}
 
         self.nastavitve_file = "files/nastavitve.pkl"
         try:
-            fileholder = open(nastavitve_file, "rb")
+            fileholder = open(self.nastavitve_file, "rb")
             self.nastavitve = pickle.load(fileholder)
             fileholder.close()
         except:
-            self.nastavitve = {"Ux": 2.7,
-                               "Uy": 1.8,
-                               "Ukal": 0.3,
-                               "Upomik": 0.3,
-                               "hostname": "pi-kamera",
-                               "port": 22,
-                               "username": "pi",
-                               "password": "pi",
-                               "skripta": "Desktop/laserV3.py",
-                               "ao0": "cDAQ10Mod1/ao0",
-                               "ao1": "cDAQ10Mod1/ao1",
-                               "ai0": "cDAQ10Mod3/ai0",
-                               "ai1": "cDAQ10Mod3/ai1",
-                               "ai2": "cDAQ10Mod3/ai3",
-                               "U_max": 4,
-                               "U_min": -4,
-                               "las_v": 20.0,
-                               "zamik laser": 0.00124,
-                               "start silomer/kladivo": True,
-                               "f kladivo": 2.273,
-                               "f1": 4.034,
-                               "f2": 9.923,
-                               "osnovna frekvenca": 13107200,
-                               "frekvenca vzorčenja": 4,
-                               "čas": 1,
-                               "vzorcev za povprečenje": 5,
-                               "okno exc": 2,
-                               "okno h": 2,
-                               "typ": 2,
-                               "file_name": "meritev",
-                               "dir": "C:",
-                               "število ciklov": 1}
-            file = open("nastavitve.pkl", "wb")
+            self.nastavitve = dict(self.backup)
+            file = open("files/nastavitve.pkl", "wb")
             pickle.dump(self.nastavitve, file)
             file.close()
 #_________________________________Konstante___________________________________________
@@ -113,6 +128,7 @@ class GUI_MSLK:
         tabControl.add(self.tab3, text='Meritve')
         tabControl.pack(expand=1, fill="both")
 #___________________________________tab_1_____________________________________________
+    #povezava in tarče
         self.gumb_izbriši_zadnjo_tarčo = tk.Button(
             self.tab1, text="Izbriši zadnjo tarčo", command=self.izbriši_zadnjo_tarčo)
         self.gumb_izbriši_zadnjo_tarčo.grid(row=0, column=1)
@@ -195,7 +211,7 @@ class GUI_MSLK:
         self.gumb_kalibriraj.grid(row=3, column=0)
         # zadodt
         self.gumb_shrani_kal = tk.Button(
-            frame_joystick, text="Shrani", bg="#eb4034")
+            frame_joystick, text="Shrani", bg="#eb4034", command=self.save_kaibracija)
         self.gumb_shrani_kal.grid(row=3, column=1)
 
     # priprava za plotanje slike iz kamere
@@ -252,9 +268,6 @@ class GUI_MSLK:
         pi_nast_gumb2 = tk.Button(
             master=frame_pi_nastavitve, text="Save", command=self.save_pi)
         pi_nast_gumb2.grid(row=6, column=1)
-
-        # pi_nast_gumb3 = tk.Button(master = frame_pi_nastavitve, text = "Prekini in vspostavi povezavo")
-        # pi_nast_gumb3.grid(row=7,column=0,columnspan=3)
 
     # Nastavitve merilnih kartic
         frame_ni_nastavitve = tk.Frame(
@@ -349,6 +362,14 @@ class GUI_MSLK:
         self.entry_laser_delay.grid(row=5, column=1)
         self.entry_laser_delay.insert(0, self.nastavitve["zamik laser"])
 
+        gumb_rtd_laser = tk.Button(
+            frame_laser_nastavitve, text="Reset to default",command=self.rtd_laser)
+        gumb_rtd_laser.grid(row=6, column=0)
+
+        gumb_seve_laser = tk.Button(
+            frame_laser_nastavitve, text="Save",command=self.save_laser)
+        gumb_seve_laser.grid(row=6, column=1)
+
     # nastavitve silomera/kladiva
         frame_silomer_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
@@ -407,18 +428,31 @@ class GUI_MSLK:
 
         self.entry_kriterij_mirnosti = tk.Entry(frame_silomer_nastavitve)
         self.entry_kriterij_mirnosti.grid(row=5,column=1)
-        self.entry_kriterij_mirnosti.insert(0,"0.1")
+        self.entry_kriterij_mirnosti.insert(0,self.nastavitve["kladivo k. mirnosti"])
 
         label_trigger_value = tk.Label(frame_silomer_nastavitve,text="Trigger value")
         label_trigger_value.grid(row=6,column=0)
 
         self.entry_trigger_value = tk.Entry(frame_silomer_nastavitve)
         self.entry_trigger_value.grid(row=6,column=1)
-        self.entry_trigger_value.insert(0,"5")
+        self.entry_trigger_value.insert(0,self.nastavitve["trigger value"])
 
-        self.urejanje_silomer_kladivo()
+        label_pred_trigger = tk.Label(frame_silomer_nastavitve,text="Dolžina meritve pred trigger (s)")
+        label_pred_trigger.grid(row=7,column=0)
 
-        # nastavitve zajema
+        self.entry_pred_trigger = tk.Entry(frame_silomer_nastavitve)
+        self.entry_pred_trigger.grid(row=7,column=1)
+        self.entry_pred_trigger.insert(0, self.nastavitve["pred trigger"])
+
+        gumb_rtd_silomer_kladivo = tk.Button(
+            frame_silomer_nastavitve, text="Reset to default",command=self.rtd_silomer_kladivo)
+        gumb_rtd_silomer_kladivo.grid(row=8, column=0)
+
+        gumb_seve_silomer_kladivo = tk.Button(
+            frame_silomer_nastavitve, text="Save",command=self.save_silomer_kladivo)
+        gumb_seve_silomer_kladivo.grid(row=8, column=1)
+
+    # nastavitve zajema
         frame_zajem_nastavitve = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
         frame_zajem_nastavitve.grid(row=2, column=0)
@@ -433,8 +467,6 @@ class GUI_MSLK:
 
         self.entry_osnovna_frekvenca = tk.Entry(frame_zajem_nastavitve)
         self.entry_osnovna_frekvenca.grid(row=1, column=1)
-        self.entry_osnovna_frekvenca.insert(
-            0, self.nastavitve["osnovna frekvenca"])
 
         self.gumb_izračunaj_frekvence = tk.Button(
             frame_zajem_nastavitve, text="Izračunaj frekvence", command=self.izračun_možnih_frekvenc)
@@ -477,8 +509,6 @@ class GUI_MSLK:
                                 "1651.6129032258063"]
 
         self.variable = tk.StringVar(self.master)
-        self.variable.set(
-            self.mozne_frekvence[self.nastavitve["frekvenca vzorčenja"]])
 
         self.om_frekvenca = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable, *self.mozne_frekvence)
@@ -490,7 +520,6 @@ class GUI_MSLK:
 
         self.entry_cas_meritve = tk.Entry(master=frame_zajem_nastavitve)
         self.entry_cas_meritve.grid(row=4, column=1)
-        self.entry_cas_meritve.insert(0, self.nastavitve["čas"])
 
         label_povprečenje = tk.Label(
             frame_zajem_nastavitve, text="Vzorcev za povprečenje")
@@ -498,8 +527,6 @@ class GUI_MSLK:
 
         self.entry_povprečenje = tk.Entry(master=frame_zajem_nastavitve)
         self.entry_povprečenje.grid(row=5, column=1)
-        self.entry_povprečenje.insert(
-            0, self.nastavitve["vzorcev za povprečenje"])
 
         # Kontrola FRF
         label_okno_exc = tk.Label(frame_zajem_nastavitve, text="Okno exc")
@@ -509,54 +536,76 @@ class GUI_MSLK:
                      'Exponential', 'Bartlett', 'Blackman', 'Kaiser']
 
         self.variable_okno_exc = tk.StringVar(self.master)
-        self.variable_okno_exc.set(self.okna[self.nastavitve["okno exc"]])
+        
 
         self.om_okno_exc = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_okno_exc, *self.okna)
         self.om_okno_exc.grid(row=6, column=1)
 
+        label_okno_exc_value = tk.Label(frame_zajem_nastavitve,text="Vrednost za okno exc")
+        label_okno_exc_value.grid(row=7,column=0)
+
+        self.entry_okno_exc_value = tk.Entry(frame_zajem_nastavitve)
+        self.entry_okno_exc_value.grid(row=7,column=1)
+
         label_okno_h = tk.Label(frame_zajem_nastavitve, text="Okno h")
-        label_okno_h.grid(row=7, column=0)
+        label_okno_h.grid(row=8, column=0)
 
         self.variable_okno_h = tk.StringVar(self.master)
-        self.variable_okno_h.set(self.okna[self.nastavitve["okno h"]])
+
 
         self.om_okno_h = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_okno_h, *self.okna)
-        self.om_okno_h.grid(row=7, column=1)
+        self.om_okno_h.grid(row=8, column=1)
+
+        label_okno_h_value = tk.Label(frame_zajem_nastavitve,text="Vrednost za okno h")
+        label_okno_h_value.grid(row=9,column=0)
+
+        self.entry_okno_h_value = tk.Entry(frame_zajem_nastavitve)
+        self.entry_okno_h_value.grid(row=9,column=1)
 
         label_typ = tk.Label(frame_zajem_nastavitve, text="Typ")
-        label_typ.grid(row=8, column=0)
+        label_typ.grid(row=10, column=0)
 
         self.types = ['H1', 'H2', 'Hv', 'vector', 'ODS']
 
         self.variable_typ = tk.StringVar(self.master)
-        self.variable_typ.set(self.types[self.nastavitve["typ"]])
+        
 
         self.om_typ = tk.OptionMenu(
             frame_zajem_nastavitve, self.variable_typ, *self.types)
-        self.om_typ.grid(row=8, column=1)
+        self.om_typ.grid(row=10, column=1)
 
         self.var_save = tk.IntVar()
         self.cb_save_file = tk.Checkbutton(
             frame_zajem_nastavitve, text='Shranjuj podatke', variable=self.var_save, onvalue=1, offvalue=0)
-        self.cb_save_file.grid(row=9, column=0, columnspan=2)
+        self.cb_save_file.grid(row=11, column=0, columnspan=2)
 
         label_ime_datoteke = tk.Label(
             frame_zajem_nastavitve, text="Ime datoteke")
-        label_ime_datoteke.grid(row=10, column=0)
+        label_ime_datoteke.grid(row=12, column=0)
 
         self.entry_ime_datoteke = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_ime_datoteke.grid(row=10, column=1)
+        self.entry_ime_datoteke.grid(row=12, column=1)
         self.entry_ime_datoteke.insert(0, self.nastavitve["file_name"])
 
         button_path = tk.Button(frame_zajem_nastavitve,
                                 text="Pot do datoteke", command=self.dir_path)
-        button_path.grid(row=11, column=0)
+        button_path.grid(row=13, column=0)
 
         self.entry_path = tk.Entry(master=frame_zajem_nastavitve)
-        self.entry_path.grid(row=11, column=1)
+        self.entry_path.grid(row=13, column=1)
         self.entry_path.insert(0, self.nastavitve["dir"])
+
+        gumb_rtd_zajem = tk.Button(
+            frame_zajem_nastavitve, text="Reset to default",command=self.rtd_zajem)
+        gumb_rtd_zajem.grid(row=14, column=0)
+
+        gumb_seve_zajem = tk.Button(
+            frame_zajem_nastavitve, text="Save",command=self.save_zajem)
+        gumb_seve_zajem.grid(row=14, column=1)
+
+        self.urejanje_silomer_kladivo()
 
     # plotanje
         frame_tab3_plotanje = tk.Frame(
@@ -953,10 +1002,13 @@ class GUI_MSLK:
 
     def urejanje_silomer_kladivo(self):
         """aktivacija in deaktivacija ustreznih oken glede na to s čim se miri"""
-        if self.var_kladivo.get() == True:
+        if self.var_kladivo.get():
             self.entry_silomer_faktor2['state'] = 'disabled'
             self.entry_kriterij_mirnosti['state'] = 'normal'
             self.entry_trigger_value['state'] = 'normal'
+            self.entry_pred_trigger['state'] = 'normal'
+            self.entry_povprečenje["state"] = "disabled"
+ 
             self.text_kanal_sk.set("Kanal kladiva")
             self.entry_silomer_kanal.delete(0, 'end')
             self.entry_silomer_kanal.insert(0, self.nastavitve["ai2"])
@@ -964,10 +1016,31 @@ class GUI_MSLK:
             self.entry_silomer_faktor1.delete(0, 'end')
             self.entry_silomer_faktor1.insert(0, self.nastavitve["f kladivo"])
 
+            self.entry_osnovna_frekvenca.delete(0,"end")
+            self.entry_osnovna_frekvenca.insert(
+                0, self.nastavitve["osnovna frekvenca kladivo"])
+            self.variable.set(
+                self.mozne_frekvence[self.nastavitve["frekvenca vzorčenja kladivo"]])
+            self.entry_cas_meritve.delete(0,"end")
+            self.entry_cas_meritve.insert(0, self.nastavitve["čas kladivo"])
+            self.entry_povprečenje.delete(0,"end")
+            self.entry_povprečenje.insert(0, 
+                self.nastavitve["vzorcev za povprečenje kladivo"])
+            self.variable_okno_exc.set(self.okna[self.nastavitve["okno exc kladivo"]])
+            self.entry_okno_exc_value.delete(0,"end")
+            self.entry_okno_exc_value.insert(0,self.nastavitve["value exc kladivo"])
+            self.variable_okno_h.set(self.okna[self.nastavitve["okno h kladivo"]])
+            self.entry_okno_h_value.delete(0,"end")
+            self.entry_okno_h_value.insert(0,self.nastavitve["value h kladivo"])
+            self.variable_typ.set(self.types[self.nastavitve["typ kladivo"]])
+
         else:
             self.entry_silomer_faktor2['state'] = 'normal'
             self.entry_kriterij_mirnosti['state'] = 'disabled'
             self.entry_trigger_value['state'] = 'disabled'
+            self.entry_pred_trigger['state'] = 'disabled'
+            self.entry_povprečenje["state"] = "normal"
+
             self.text_kanal_sk.set("Kanal silomera")
             self.entry_silomer_kanal.delete(0, 'end')
             self.entry_silomer_kanal.insert(0, self.nastavitve["ai1"])
@@ -975,6 +1048,24 @@ class GUI_MSLK:
             self.entry_silomer_faktor1.delete(0, 'end')
             self.entry_silomer_faktor1.insert(0, self.nastavitve["f1"])
 
+            self.entry_osnovna_frekvenca.delete(0,"end")
+            self.entry_osnovna_frekvenca.insert(
+                0, self.nastavitve["osnovna frekvenca silomer"])
+            self.variable.set(
+                self.mozne_frekvence[self.nastavitve["frekvenca vzorčenja silomer"]])
+            self.entry_cas_meritve.delete(0,"end")
+            self.entry_cas_meritve.insert(0, self.nastavitve["čas silomer"])
+            self.entry_povprečenje.delete(0,"end")
+            self.entry_povprečenje.insert(0, 
+                self.nastavitve["vzorcev za povprečenje silomer"])
+            self.variable_okno_exc.set(self.okna[self.nastavitve["okno exc silomer"]])
+            self.entry_okno_exc_value.delete(0,"end")
+            self.entry_okno_exc_value.insert(0,self.nastavitve["value exc silomer"])
+            self.variable_okno_h.set(self.okna[self.nastavitve["okno h silomer"]])
+            self.entry_okno_h_value.delete(0,"end")
+            self.entry_okno_h_value.insert(0,self.nastavitve["value h silomer"])
+            self.variable_typ.set(self.types[self.nastavitve["typ silomer"]])
+            
     def laser_Ux_gor(self):
         """Sprememba poločaja zrcala na podlagi napetosti za smer x,
          POVEČANJE vrednosti"""
@@ -1096,6 +1187,130 @@ class GUI_MSLK:
         else:
             self.continuePlottingImg = True
 
+    def shrani_nastavitve(self):
+        try:
+            fileholder = open(self.nastavitve_file, 'wb')
+            pickle.dump(self.nastavitve, fileholder)
+            fileholder.close()
+            self.stslabel.configure(text="Nastavitve shranjene.")
+
+        except:
+            self.stslabel.configure(
+                text="NAPKA! Nastavitve NISO sharanjene.")
+
+    def save_kaibracija(self):
+        self.nastavitve["Ux"] = self.U_x
+        self.nastavitve["Uy"] = self.U_y
+        self.nastavitve["Ukal"] = float(self.entry_kal_premik.get())
+        self.nastavitve["Upomik"] = float(self.entry_U_pomik.get())
+
+        self.shrani_nastavitve()
+
+    def rtd_laser(self):
+        self.entry_laser_kanal.delete(0,"end")
+        self.entry_laser_kanal.insert(0,self.backup["ai0"])
+        self.entry_laser_U_max.delete(0,"end")
+        self.entry_laser_U_max.insert(0,self.backup["U_max"])
+        self.entry_laser_U_min.delete(0,"end")
+        self.entry_laser_U_min.insert(0,self.backup["U_min"])
+        self.entry_laser_v.delete(0,"end")
+        self.entry_laser_v.insert(0,self.backup["las_v"])
+        self.entry_laser_delay.delete(0,"end")
+        self.entry_laser_delay.insert(0,self.backup["zamik laser"])
+
+        self.save_laser()
+
+    def save_laser(self):
+        self.nastavitve["ai0"] = self.entry_laser_kanal.get()
+        self.nastavitve["U_max"] = float(self.entry_laser_U_max.get())
+        self.nastavitve["U_min"] = float(self.entry_laser_U_min.get())
+        self.nastavitve["las_v"] = float(self.entry_laser_v.get())
+        self.nastavitve["zamik laser"] = float(self.entry_laser_delay.get())
+        self.shrani_nastavitve()
+
+    def rtd_silomer_kladivo(self):
+        if self.var_silomer.get():
+            self.entry_silomer_kanal.delete(0,"end")
+            self.entry_silomer_kanal.insert(0,self.backup["ai1"])
+            self.entry_silomer_faktor1.delete(0,"end")
+            self.entry_silomer_faktor1.insert(0,self.backup["f1"])
+            self.entry_silomer_faktor2.delete(0,"end")
+            self.entry_silomer_faktor2.insert(0,self.backup["f2"])
+        else:
+            self.entry_silomer_kanal.delete(0,"end")
+            self.entry_silomer_kanal.insert(0,self.backup["ai2"])
+            self.entry_silomer_faktor1.delete(0,"end")
+            self.entry_silomer_faktor1.insert(0,self.backup["f kladivo"])
+            self.entry_kriterij_mirnosti.delete(0,"end")
+            self.entry_kriterij_mirnosti.insert(0,self.backup["kladivo k. mirnosti"])
+            self.entry_trigger_value.delete(0,"end")
+            self.entry_trigger_value.insert(0,self.backup["trigger value"])
+            self.entry_pred_trigger.delete(0,"end")
+            self.entry_pred_trigger.insert(0,self.backup["pred trigger"])
+        self.save_silomer_kladivo()
+
+    def save_silomer_kladivo(self):
+        if self.var_silomer.get():
+            self.nastavitve["ai1"]=self.entry_silomer_kanal.get()
+            self.nastavitve["f1"]=float(self.entry_silomer_faktor1.get())
+            self.nastavitve["f2"]=float(self.entry_silomer_faktor2.get())
+        else:
+            self.nastavitve["ai2"]=self.entry_silomer_kanal.get()
+            self.nastavitve["f kladivo"]=float(self.entry_silomer_faktor1.get())
+            self.nastavitve["kladivo k. mirnosti"]= float(self.entry_kriterij_mirnosti.get())
+            self.nastavitve["trigger value"] = float(self.entry_trigger_value.get())
+            self.nastavitve["pred trigger"] = float(self.entry_pred_trigger.get())
+            self.nastavitve["trigger value"] = float(self.entry_trigger_value.get())
+
+        self.shrani_nastavitve()
+
+    def rtd_zajem(self):
+        if self.var_silomer.get():
+            self.entry_osnovna_frekvenca.delete(0,"end")
+            self.entry_osnovna_frekvenca.insert(0,self.backup["osnovna frekvenca silomer"])
+            self.entry_cas_meritve.delete(0,"end")
+            self.entry_cas_meritve.insert(0,self.backup["čas silomer"])
+            self.entry_povprečenje.delete(0,"end")
+            self.entry_povprečenje.insert(0,self.backup["vzorcev za povprečenje silomer"])
+            self.entry_okno_exc_value.delete(0,"end")
+            self.entry_okno_exc_value.insert(0,self.backup["value exc silomer"])
+            self.entry_okno_h_value.delete(0,"end")
+            self.entry_okno_h_value.insert(0,self.backup["value h silomer"])
+        else:
+            self.entry_osnovna_frekvenca.delete(0,"end")
+            self.entry_osnovna_frekvenca.insert(0,self.backup["osnovna frekvenca kladivo"])
+            self.entry_cas_meritve.delete(0,"end")
+            self.entry_cas_meritve.insert(0,self.backup["čas kladivo"])
+            self.entry_povprečenje.delete(0,"end")
+            self.entry_povprečenje.insert(0,self.backup["vzorcev za povprečenje kladivo"])
+            self.entry_okno_exc_value.delete(0,"end")
+            self.entry_okno_exc_value.insert(0,self.backup["value exc kladivo"])
+            self.entry_okno_h_value.delete(0,"end")
+            self.entry_okno_h_value.insert(0,self.backup["value h kladivo"])
+        self.entry_ime_datoteke.delete(0,"end")
+        self.entry_ime_datoteke.insert(0,self.backup["file_name"])
+        self.entry_path.delete(0,"end")
+        self.entry_path.insert(0,self.backup["dir"])
+        self.save_zajem()
+
+    def save_zajem(self):
+        if self.var_silomer.get():
+            self.nastavitve["osnovna frekvenca silomer"] = int(self.entry_osnovna_frekvenca.get())
+            self.nastavitve["čas silomer"] = float(self.entry_cas_meritve.get())
+            self.nastavitve["vzorcev za povprečenje silomer"]= int(self.entry_povprečenje.get())
+            self.nastavitve["value exc silomer"]= float(self.entry_okno_exc_value.get())
+            self.nastavitve["value h silomer"]=float(self.entry_okno_h_value.get())
+        else:
+            print("shranjeno")
+            self.nastavitve["osnovna frekvenca kladivo"] = int(self.entry_osnovna_frekvenca.get())
+            self.nastavitve["čas kladivo"] = float(self.entry_cas_meritve.get())
+            self.nastavitve["vzorcev za povprečenje kladivo"]= int(self.entry_povprečenje.get())
+            self.nastavitve["value exc kladivo"]= float(self.entry_okno_exc_value.get())
+            self.nastavitve["value h kladivo"]=float(self.entry_okno_h_value.get())
+        self.nastavitve["file_name"]=self.entry_ime_datoteke.get()
+        self.nastavitve["dir"]=self.entry_path.get()
+        self.shrani_nastavitve()
+
     def rtd_pi(self):
         """Naložijo se prvotni podatki za RPi"""
         self.vnos1.delete(0, "end")
@@ -1119,15 +1334,7 @@ class GUI_MSLK:
         self.nastavitve["username"] = str(self.vnos3.get())
         self.nastavitve["password"] = str(self.vnos4.get())
         self.nastavitve["skripta"] = str(self.vnos5.get())
-        try:
-            fileholder = open(self.nastavitve_file, 'wb')
-            pickle.dump(self.nastavitve, fileholder)
-            fileholder.close()
-            self.stslabel.configure(text="Nastavitve RPi shranjene.")
-
-        except:
-            self.stslabel.configure(
-                text="NAPKA! Nastavitve RPi NISO sharanjene.")
+        self.shrani_nastavitve()
 
     def rtd_ni(self):
         """Naložijo se prvotni podatki za merilne kartice"""
@@ -1153,19 +1360,7 @@ class GUI_MSLK:
         self.nastavitve["ai0"] = str(self.vnos3_ni.get())
         self.nastavitve["ai1"] = str(self.vnos4_ni.get())
 
-        try:
-            fileholder = open(self.nastavitve_file, 'wb')
-            pickle.dump(self.nastavitve, fileholder)
-            fileholder.close()
-            self.stslabel.configure(
-                text="Nastavitve merilne kartice shranjene.")
-
-            self.scanner.laser.ch1 = self.nastavitve["ao0"]
-            self.scanner.laser.ch2 = self.nastavitve["ao1"]
-
-        except:
-            self.stslabel.configure(
-                text="NAPKA! Nastavitve merilne kartice NISO sharanjene.")
+        self.shrani_nastavitve()
 
     def on_click(self, event):
         """Funkcija ki opazuje in določa kaj se zgodi ko kliknemo na sliko"""
@@ -1361,8 +1556,9 @@ class GUI_MSLK:
         
         while True:
             # potrebno dodat za določanje preko GUI
-            triger_val = 2.2
-            pogoj_mirnosti = 0.25
+            triger_val = float(self.entry_trigger_value.get())
+            pogoj_mirnosti = float(self.entry_kriterij_mirnosti.get())
+            pred_trigger = float(self.entry_pred_trigger.ger())
             abs_v = float(self.entry_laser_v.get())
 
             if self.objek_je_mirn == False:
@@ -1418,7 +1614,7 @@ class GUI_MSLK:
                             # nadalna obdelava - iskanje kje je bil sprožen triger
                             indeks_triger = np.argmax(self.exc > float(triger_val))
                             # vračanje nazaj od sprožitve 0.01s
-                            nazaj = int(0.01*self.scanner.meritev.frekvenca)
+                            nazaj = int(pred_trigger*self.scanner.meritev.frekvenca)
                             st_vzorcev = int(
                                 self.scanner.meritev.frekvenca*float(self.entry_cas_meritve.get()))
                             # obrezovanje na meritev
@@ -1441,19 +1637,19 @@ class GUI_MSLK:
                                 self.t, self.exc, self.h, self.frf.get_f_axis(), self.frf.get_FRF())
                             
                             #prevei še če je dvojni udarec
-                            if  True:#self.frf.is_data_ok(self.exc,self.h):
+                            if  self.frf.is_data_ok(self.exc,self.h):
                                 self.prekini = True
                                 self.stslabel.configure(text="Meritev je ok.")
                                 if self.var_save.get() == 1:
                                     if self.append_to_file == False:
                                         file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
-                                        np.save(file, self.frf.get_FRF())    
+                                        np.save(file, self.frf.get_FRF())
+                                self.pomik_naprej=True    
                             else:
                                 self.beep_double()
                                 self.stslabel.configure(text="Meritev ni dobra.")
                             self.triger = False
                             self.serija0 = False
-                            self.objek_je_mirn = False
 
                     else:
                         #če triger ni sprožen shrani serijo kot m1 (beri kot -1)
