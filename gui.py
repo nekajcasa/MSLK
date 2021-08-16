@@ -309,13 +309,9 @@ class GUI_MSLK:
             master=frame_ni_nastavitve, text="Save", command=self.save_ni)
         ni_nast_gumb2.grid(row=5, column=1)
     # nastavitve laserja
-        frame_laser_nastavitve = tk.Frame(
-            master=self.tab2, relief=tk.RAISED, borderwidth=1, width=100, height=100)
+        frame_laser_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve laserja")
         frame_laser_nastavitve.grid(row=0, column=1,sticky="NSEW")
-
-        label_laser_nastavitve = tk.Label(
-            frame_laser_nastavitve, text="Nastavitve laserja")
-        label_laser_nastavitve.grid(row=0, column=0, columnspan=2)
 
         label_laser_kanal = tk.Label(
             frame_laser_nastavitve, text="Kanal laserja")
@@ -1009,7 +1005,7 @@ class GUI_MSLK:
         self.acc = pyEMA.Model(frf=self.data_frf[self.prikazan_cikelj-1],
                                freq=self.data_freq,
                                lower=10,
-                               upper=float(self.variable.get())/2,
+                               upper=float(self.variable.get())/5,
                                pol_order_high=60)
         self.acc.get_poles()
         self.stslabel.configure(text=f"Poli določeni, možno je plotanje lastnih oblik.")
@@ -1205,8 +1201,11 @@ class GUI_MSLK:
         if self.prikazan_cikelj == 1:
             self.spremeni_stanje(self.gumb_cikelj_prejšnji)
 
-        self.update_grafe([], 1, 1, self.data_freq,
-                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.update_grafe(np.linspace(0, 1,len(self.data_exc[0,0])),
+                            self.data_exc[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_h[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_freq,
+                            self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
         self.tabControltab3.select(self.tab3tab2)
 
     def cikelj_naprej(self):
@@ -1220,8 +1219,11 @@ class GUI_MSLK:
         if self.prikazan_cikelj == self.data_ciklov:
             self.spremeni_stanje(self.gumb_cikelj_nasljednji)
 
-        self.update_grafe([], 1, 1, self.data_freq,
-                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.update_grafe(np.linspace(0, 1,len(self.data_exc[0,0])),
+                            self.data_exc[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_h[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_freq,
+                            self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
         self.tabControltab3.select(self.tab3tab2)
 
     def mesto_nazaj(self):
@@ -1235,8 +1237,11 @@ class GUI_MSLK:
         if self.prikazano_mesto == 1:
             self.spremeni_stanje(self.gumb_mesto_prejšnje)
 
-        self.update_grafe([], 1, 1, self.data_freq,
-                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.update_grafe(np.linspace(0, 1,len(self.data_exc[0,0])),
+                            self.data_exc[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_h[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_freq,
+                            self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
         self.tabControltab3.select(self.tab3tab2)
 
     def mesto_naprej(self):
@@ -1250,8 +1255,11 @@ class GUI_MSLK:
         if self.prikazano_mesto == self.data_mest:
             self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
-        self.update_grafe([], 1, 1, self.data_freq,
-                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.update_grafe(np.linspace(0, 1,len(self.data_exc[0,0])),
+                            self.data_exc[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_h[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_freq,
+                            self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
         self.tabControltab3.select(self.tab3tab2)
 
     def kalibracija_laserja(self):
