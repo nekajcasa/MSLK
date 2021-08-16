@@ -185,17 +185,21 @@ class Camera:
         print(f"povezava na {address}, je bila vspostavljena")
         #self.pi_kamera.send(bytes("192.168.137.1", "utf-8"))
 
-    def req(self, dtyp):
+    def req(self, dtyp,U_x=2,U_y=2):
         """možne zahteva slika: "img", pozicija laserja: "loc" """
         self.pi_kamera.send(bytes(dtyp, "utf-8"))
+        count=0
         if dtyp == "loc":
             run = 1
             while run == 1:
                 data = self.pi_kamera.recv(128)
                 data = data.decode("utf-8")
                 if data == "None":
-                    print("Žarek ni zaznan...")
+                    print(f"Žarek ni zaznan...{count}")
                     self.pi_kamera.send(bytes(dtyp, "utf-8"))
+                    count+=1
+                    if count>5:
+                        return np.array([None,None])
                 else:
                     run = 0
             data = data[:-1]
@@ -243,12 +247,25 @@ class LaserHead:
         self.premik_volt(v1, v2)
         time.sleep(0.5)
         p0 = self.kamera.req("loc")
+        while p0.any()==None:
+            v1+=0.05
+            v2+=0.05
+            self.premik_volt(v1, v2)
+            p0 = self.kamera.req("loc")
         time.sleep(0.5)
         self.premik_volt(v3, v4)
         time.sleep(0.5)
         p1 = self.kamera.req("loc")
+        while p1.any()==None:
+            v3+=0.05
+            v4+=0.05
+            self.premik_volt(v3, v4)
+            p1 = self.kamera.req("loc")
         delta_px = np.array(p1)-np.array(p0)
+        položaj_zrcal_0 = np.array([v1, v2])
+        položaj_zrcal_1 = np.array([v3, v4])
         delta_zrcal = položaj_zrcal_1-položaj_zrcal_0
+        self.položaj_zrcal_origen=položaj_zrcal_1
         k = delta_zrcal / delta_px
         print(f"konec kalibracije, k={k}")
 
@@ -332,9 +349,15 @@ class Scanner:
         self.tarče = np.array(tarče)
 
     def namesto(self, cilj, max_r=5):
-        """pomik na merilno mesto meritve"""
+        """pomik na merilno mesto meritve (cilj), loopi se zaključijo ko se približa cilju na max_r"""
         while True:
             p0 = self.kamera.req("loc")
+            while p0.any()==None:
+                self.laser.premik_volt(self.položaj_zrcal_origen[0],self.položaj_zrcal_origen[1])
+                p0 = self.kamera.req("loc")
+                if p0.any()==None:
+                    self.položaj_zrcal_origen[0]+=0.05
+                    self.položaj_zrcal_origen[1]+=0.05
             delta_px = cilj-p0
             razdalja_do_cilja = np.sqrt(delta_px[0]**2+delta_px[1]**2)
             print(f"Trenutna lokacija: {p0}\t Cilj: {cilj}\t Razdalja: {razdalja_do_cilja}")
@@ -355,11 +378,16 @@ class Scanner:
                 self.laser.premik_volt(
                     self.položaj_zrcal[0], self.položaj_zrcal[1])
                 p1 = self.kamera.req("loc")
-                # preverjanje položaja laserja, če je zašel v nevidnem območje
+                while p1.any()==None:
+                    self.položaj_zrcal=self.položaj_zrcal*0.5
+                    self.laser.premik_volt(self.položaj_zrcal[0], self.položaj_zrcal[1])
+                    p1 = self.kamera.req("loc")
+                # preverjanje položaja laserja, če je zašel v nevidno območje
                 delta_px1 = cilj-p1
-                razdalja_do_cilja1 = np.sqrt(delta_px1[0]**2+delta_px1[1]**2)
-                print(f"razdalja do cilja prvič {razdalja_do_cilja1}")
-                while razdalja_do_cilja1 > razdalja_do_cilja*0.8:
+                žarek_do_cilja = np.sqrt(delta_px1[0]**2+delta_px1[1]**2)
+                #print(f"razdalja do cilja prvič {razdalja_do_cilja1}")
+                radij_verjetnosti=razdalja_do_cilja*0.15
+                while žarek_do_cilja > radij_verjetnosti:
                     # pomeni da ne vidimo žarka sej domnevamo da ne more zgrešiti za več kot 50 pikslov
                     # ponastavimo žarek na začetni položaj
                     self.položaj_zrcal = list(p_zrcal)
@@ -370,10 +398,15 @@ class Scanner:
                     self.laser.premik_volt(
                         self.položaj_zrcal[0], self.položaj_zrcal[1])
                     p1 = self.kamera.req("loc")
+                    while p1.any()==None:
+                        self.položaj_zrcal=self.položaj_zrcal*0.5
+                        self.laser.premik_volt(self.položaj_zrcal[0], self.položaj_zrcal[1])
+                        p1 = self.kamera.req("loc")
                     delta_px1 = cilj-p1
-                    razdalja_do_cilja1 = np.sqrt(
+                    žarek_do_cilja = np.sqrt(
                         delta_px1[0]**2+delta_px1[1]**2)
-                    print(f"zgrešeno {razdalja_do_cilja1}, pomika za {delta_zrcal}, na {self.položaj_zrcal}")
+                    radij_verjetnosti=radij_verjetnosti*1.3
+                    print(f"zgrešeno {žarek_do_cilja}, radij radij verjetnosti {radij_verjetnosti}")
 
     def cikelj(self, c):
         """funkcija premika laser od tarče do tarče, na vsaki tarči se izede
@@ -458,7 +491,7 @@ class Scanner:
         """izračuna premik slike"""
         self.tarče = self.tarče+translation
 
-
+#showcase
 if __name__ == '__main__':
     # določanje objektov
     Pi = RPi()
@@ -473,7 +506,7 @@ if __name__ == '__main__':
     # kalibracija laserja
     scanner.k = laser.kalibracija_basic(
         2, 2, položaj_zrcal[0], položaj_zrcal[1])
-    # prikaz prve slike
+    # zahtevanje slike od RPi in poltanje slike
     image = pi_kamera.req("img")
     scanner.plotimg(image)
     # določanje tarč

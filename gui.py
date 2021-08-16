@@ -291,19 +291,19 @@ class GUI_MSLK:
         self.vnos2_ni.grid(row=2, column=1)
         self.vnos2_ni.insert(0, self.nastavitve["ao1"])
 
-        nast3_ni = tk.Label(master=frame_ni_nastavitve,
-                            text="Vhodni kanal 1: ")
-        nast3_ni.grid(row=3, column=0)
-        self.vnos3_ni = tk.Entry(master=frame_ni_nastavitve)
-        self.vnos3_ni.grid(row=3, column=1)
-        self.vnos3_ni.insert(0, self.nastavitve["ai0"])
+        # nast3_ni = tk.Label(master=frame_ni_nastavitve,
+        #                     text="Vhodni kanal 1: ")
+        # nast3_ni.grid(row=3, column=0)
+        # self.vnos3_ni = tk.Entry(master=frame_ni_nastavitve)
+        # self.vnos3_ni.grid(row=3, column=1)
+        # self.vnos3_ni.insert(0, self.nastavitve["ai0"])
 
-        nast4_ni = tk.Label(master=frame_ni_nastavitve,
-                            text="Vhodni kanal 2: ")
-        nast4_ni.grid(row=4, column=0)
-        self.vnos4_ni = tk.Entry(master=frame_ni_nastavitve)
-        self.vnos4_ni.grid(row=4, column=1)
-        self.vnos4_ni.insert(0, self.nastavitve["ai1"])
+        # nast4_ni = tk.Label(master=frame_ni_nastavitve,
+        #                     text="Vhodni kanal 2: ")
+        # nast4_ni.grid(row=4, column=0)
+        # self.vnos4_ni = tk.Entry(master=frame_ni_nastavitve)
+        # self.vnos4_ni.grid(row=4, column=1)
+        # self.vnos4_ni.insert(0, self.nastavitve["ai1"])
 
         ni_nast_gumb1 = tk.Button(
             master=frame_ni_nastavitve, text="Reset to default", command=self.rtd_ni)
@@ -347,7 +347,7 @@ class GUI_MSLK:
         self.entry_laser_U_min.insert(0, self.nastavitve["U_min"])
 
         label_laser_v = tk.Label(
-            frame_laser_nastavitve, text="Občutljivost [mm/s]")
+            frame_laser_nastavitve, text="Merilno območje [mm/s]")
         label_laser_v.grid(row=4, column=0)
 
         self.entry_laser_v = tk.Entry(master=frame_laser_nastavitve)
@@ -762,10 +762,10 @@ class GUI_MSLK:
             frame_upravlanje_plotov_tab3, text="Trenutno prikazan cikelj:")
         label_cikelj.grid(row=3, column=0, columnspan=3)
 
-        self.gumb_ciklj_prejšnji = tk.Button(
+        self.gumb_cikelj_prejšnji = tk.Button(
             frame_upravlanje_plotov_tab3, text="<", command=self.cikelj_nazaj)
-        self.gumb_ciklj_prejšnji.grid(row=4, column=0)
-        self.spremeni_stanje(self.gumb_ciklj_prejšnji)
+        self.gumb_cikelj_prejšnji.grid(row=4, column=0)
+        self.spremeni_stanje(self.gumb_cikelj_prejšnji)
 
         self.text_prikazan_cikej = tk.StringVar()
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
@@ -890,6 +890,8 @@ class GUI_MSLK:
         self.data_ciklov = np.shape(self.data_frf)[0]
         self.data_mest = np.shape(self.data_frf)[1]
 
+        self.prikazan_cikelj = 1
+        self.prikazano_mesto = 1
         self.kontrola_gumbov_podatkov()
 
         self.update_grafe([], 1, 1, self.data_freq,
@@ -898,28 +900,106 @@ class GUI_MSLK:
     def kontrola_gumbov_podatkov(self):
         """Funkcija nadoruje da se gubi za prehanjanje med različnimi podatki pravilno 
         izklapljajo in uklapljajo"""
-        self.prikazan_cikelj = 1
-        self.prikazano_mesto = 1
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
         self.text_prikazano_mesto.set(self.prikazano_mesto)
         self.tabControltab3.select(self.tab3tab2)
 
-        # zamrzne se vse gumbe
-        if self.data_loaded == True:
-            self.gumb_ciklj_prejšnji["state"] = "disabled"
-            self.gumb_cikelj_nasljednji["state"] = "disabled"
-            self.gumb_mesto_prejšnje["state"] = "disabled"
-            self.gumb_mesto_nasljednje["state"] = "disabled"
-            self.data_loaded = False
+        self.gumb_cikelj_prejšnji["state"] = "normal"
+        self.gumb_cikelj_nasljednji["state"] = "normal"
+        self.gumb_mesto_prejšnje["state"] = "normal"
+        self.gumb_mesto_nasljednje["state"] = "normal"
 
-        # odmrzne se relavantne gumbe
-        if self.data_ciklov > 1 and self.data_mest > 1:
-            self.spremeni_stanje(self.gumb_cikelj_nasljednji)
-            self.spremeni_stanje(self.gumb_mesto_nasljednje)
-        elif self.data_ciklov > 1:
-            self.spremeni_stanje(self.gumb_cikelj_nasljednji)
-        elif self.data_mest > 1:
-            self.spremeni_stanje(self.gumb_mesto_nasljednje)
+        if self.data_ciklov==1:
+            self.gumb_cikelj_prejšnji["state"] = "disabled"
+            self.gumb_cikelj_nasljednji["state"] = "disabled"
+            if self.prikazano_mesto==self.data_mest:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "disabled"
+            elif self.prikazano_mesto==1:
+                self.gumb_mesto_prejšnje["state"] = "disabled"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+            else:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+        elif self.data_mest==1:
+                self.gumb_mesto_prejšnje["state"] = "disabled"
+                self.gumb_mesto_nasljednje["state"] = "disabled"
+                if self.prikazan_cikelj==1:
+                    self.gumb_cikelj_prejšnji["state"] = "disabled"
+                    self.gumb_cikelj_nasljednji["state"] = "normal"
+                elif self.prikazan_cikelj==self.data_ciklov:
+                    self.gumb_cikelj_prejšnji["state"] = "normal"
+                    self.gumb_cikelj_nasljednji["state"] = "disabled"
+        elif self.prikazan_cikelj==1:
+            self.gumb_cikelj_prejšnji["state"] = "disabled"
+            self.gumb_cikelj_nasljednji["state"] = "normal"
+            if self.prikazano_mesto==1:
+                self.gumb_mesto_prejšnje["state"] = "disabled"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+            elif self.prikazano_mesto==self.data_mest:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "disabled"
+            else:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+        elif self.prikazan_cikelj==self.data_ciklov:
+            self.gumb_cikelj_prejšnji["state"] = "normal"
+            self.gumb_cikelj_nasljednji["state"] = "disabled"
+            if self.prikazano_mesto==1:
+                self.gumb_mesto_prejšnje["state"] = "disabled"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+            elif self.prikazano_mesto==self.data_mest:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "disabled"
+            else:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+        else:
+            self.gumb_cikelj_prejšnji["state"] = "normal"
+            self.gumb_cikelj_nasljednji["state"] = "normal"
+            if self.prikazano_mesto==1:
+                self.gumb_mesto_prejšnje["state"] = "disabled"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+            elif self.prikazano_mesto==self.data_mest:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "disabled"
+            else:
+                self.gumb_mesto_prejšnje["state"] = "normal"
+                self.gumb_mesto_nasljednje["state"] = "normal"
+
+
+
+
+
+
+
+
+
+
+
+        # # zamrzne se vse gumbe
+        # if self.data_loaded == True:
+        #     self.gumb_cikelj_prejšnji["state"] = "disabled"
+        #     self.gumb_cikelj_nasljednji["state"] = "disabled"
+        #     self.gumb_mesto_prejšnje["state"] = "disabled"
+        #     self.gumb_mesto_nasljednje["state"] = "disabled"
+        #     self.data_loaded = False
+
+        # # odmrzne se relavantne gumbe
+        # if self.prikazan_cikelj > 1 and self.prikazano_mesto > 1 and self.prikazan_cikelj<self.data_ciklov and self.prikazano_mesto<self.data_mest:
+        #     self.spremeni_stanje(self.gumb_cikelj_nasljednji)
+        #     self.spremeni_stanje(self.gumb_cikelj_prejšnji)
+        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
+        #     self.spremeni_stanje(self.gumb_mesto_prejšnje)
+        # elif self.prikazan_cikelj=self.data_ciklov and self.prikazano_mesto=self.data_mest:
+        #     self.spremeni_stanje(self.gumb_cikelj_prejšnji)
+        #     self.spremeni_stanje(self.gumb_mesto_prejšnje)
+        # elif self.prikazan_cikelj==1 and self.prikazano_mesto==1:
+        #     self.spremeni_stanje(self.gumb_cikelj_nasljednji)
+        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
+        # elif self.prikazano_mesto > 1:
+        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
+        # elif data
 
         self.data_loaded = True
         self.gumb_doloci_pole["state"] = "normal"
@@ -934,8 +1014,7 @@ class GUI_MSLK:
                                pol_order_high=60)
         self.acc.get_poles()
         self.stslabel.configure(text=f"Poli določeni, možno je plotanje lastnih oblik.")
-        if self.poli_določeni == False:
-            self.spremeni_stanje(self.gumb_plotaj_lastne)
+        self.gumb_plotaj_lastne["state"] = "normal"
         self.poli_določeni = True
         self.acc.select_poles()
 
@@ -944,9 +1023,14 @@ class GUI_MSLK:
         # self.acc.print_modal_data()
         #frf_rec, modal_const = acc.get_constants(whose_poles='own', FRF_ind='all')
         self.axes_lastne_oblike.cla()
-        for i in range(3):
-            self.axes_lastne_oblike.plot(self.acc.normal_mode()[:, i], label=f"{i+1}. lastna oblika")
+        tarče=np.array(self.tarče)
+        for i in range(5):
+            if len(self.tarče)!=len(self.acc.normal_mode()[:, i]):
+                self.axes_lastne_oblike.plot(self.acc.normal_mode()[:, i], label=f"{i+1}. lastna oblika")
+            else:
+                self.axes_lastne_oblike.plot(tarče[:,0],self.acc.normal_mode()[:, i], label=f"{i+1}. lastna oblika")
         self.axes_lastne_oblike.legend()
+        self.graph_lastne_oblike.draw()
         self.stslabel.configure(text=f"Plotanje lastnih oblik končnao")
         self.tabControltab3.select(self.tab3tab3)
 
@@ -1120,7 +1204,7 @@ class GUI_MSLK:
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
 
         if self.prikazan_cikelj == 1:
-            self.spremeni_stanje(self.gumb_ciklj_prejšnji)
+            self.spremeni_stanje(self.gumb_cikelj_prejšnji)
 
         self.update_grafe([], 1, 1, self.data_freq,
                           self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
@@ -1129,7 +1213,7 @@ class GUI_MSLK:
     def cikelj_naprej(self):
         """Prikažejo se ploti naslednjega cikla"""
         if self.prikazan_cikelj == 1:
-            self.spremeni_stanje(self.gumb_ciklj_prejšnji)
+            self.spremeni_stanje(self.gumb_cikelj_prejšnji)
 
         self.prikazan_cikelj += 1
         self.text_prikazan_cikej.set(self.prikazan_cikelj)
@@ -1175,7 +1259,7 @@ class GUI_MSLK:
         """Izvede se ponova kalibracija laseraj na podlagi vpisanih vrednosti"""
         self.scanner.k = self.scanner.laser.kalibracija_basic(
             self.U_x, self.U_y, self.U_x - float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get()))
-        self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
+        self.scanner.položaj_zrcal = np.array([self.U_x- float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get())])
         self.stslabel.configure(text=f"Kalibracija:{self.scanner.k}")
 
     def zajemanje_slike(self):
@@ -1410,8 +1494,7 @@ class GUI_MSLK:
         self.imgshow()
 
     # _______________________________Threading______________________________________
-    """funkcije so namenjene temu da bi stvari lahko delovale sočasno, večino 
-    jih ne deluje pravilno..."""
+    """funkcije so namenjene temu da bi stvari lahko delovale sočasno."""
 
     def gh1(self):
         self.change_state()
@@ -1516,8 +1599,8 @@ class GUI_MSLK:
             self.okno_exc=self.okno_exc+":"+self.entry_okno_exc_value.get()
         
         self.okno_h=self.variable_okno_h.get()
-        if self.okno_exc!=None:
-            self.okno_exc=self.okno_exc+":"+self.entry_okno_exc_value.get()
+        if self.okno_h!=None:
+            self.okno_h=self.okno_h+":"+self.entry_okno_h_value.get()
 
     def meritev_trenutnega_mesta(self):
         if self.var_kladivo.get() == True:
@@ -1698,9 +1781,9 @@ class GUI_MSLK:
                 if(samplesAvailable >= self.scanner.meritev.st_vzorcev):
                     data = self.scanner.meritev.task.read(
                         self.scanner.meritev.st_vzorcev)
-                    self.h = np.array(
+                    h = np.array(
                         data[0])*self.scanner.meritev.las_v/self.scanner.meritev.U_max
-                    abs_v = np.max(self.h)-np.min(self.h)
+                    abs_v = np.max(h)-np.min(h)
                     self.stslabel.configure(text=f"Objekt se mora umiriti. Pred premikom na naslednje mesto.")
 
             # določanje ali je objekt dovolj miren
@@ -1725,28 +1808,35 @@ class GUI_MSLK:
         frf_data = []
         exc_data = []
         h_data = []
+        self.prikazan_cikelj=0
         for c in range(ciklov):
-            frf_c = []
+            self.prikazan_cikelj+=1
+            self.text_prikazan_cikej.set(self.prikazan_cikelj)
+            frf_cikla = []
+            exc_cikla = []
+            h_cikla = []
+            self.prikazano_mesto=0
             for i in range(len(self.tarče)):
-                
+                self.prikazano_mesto+=1
+                self.text_prikazano_mesto.set(self.prikazano_mesto)
                 self.stslabel.configure(text=f"Izvajanje {c+1} cikla, meritev {i+1} vzorca.")
                 while True:
                     self.pomik_na_tarčo(i)
                     self.meritev_trenutnega_mesta()
                     dp=1
                     if self.var_kladivo.get():
-                        dp=2
+                        dp=5
                         self.thread_meritev_kladivo.join()
                     if self.korekcija_tarč(dp)==False:
                         break
-
-                frf_c.append(self.frf.get_FRF()[1:])
+                frf_cikla.append(self.frf.get_FRF()[1:])
+                exc_cikla.append(self.exc)
+                h_cikla.append(self.h)
                 if self.prekini == True:
                     break
-            frf_data.append(np.array(frf_c))
-            exc_data.append(self.exc)
-            h_data.append(self.h)
-            self.data_frf = np.array(frf_c)
+            frf_data.append(frf_cikla)
+            exc_data.append(np.array(exc_cikla))
+            h_data.append(np.array(h_cikla))
             if self.prekini == True:
                 break
         # seznam frekvenc za FRF
@@ -1754,15 +1844,16 @@ class GUI_MSLK:
         #frf-ji [[frfji_cikla_1],[frfji_cikla_2],[frfji_cikla_3]]
         self.data_frf = np.array(frf_data)
         # self.data_exc je [[exc_cikelj_1],[exc_cikej_2],[exc_cikelj_3]...]
-        self.data_exc = exc_data
-        self.data_h = h_data
+        self.data_exc = np.array(exc_data)
+        # enako kakor za exc
+        self.data_h = np.array(h_data)
         self.data_ciklov = np.shape(self.data_frf)[0]
         self.data_mest = np.shape(self.data_frf)[1]
         self.kontrola_gumbov_podatkov()
-
+        print(np.shape(frf_data),np.shape(frf_cikla))
         if self.var_save.get() == 1:
             np.save(file_opend, (self.data_freq,
-                                 self.data_frf))  # , self.data_exc, self.data_h))
+                                 self.data_frf, self.data_exc, self.data_h))
             self.append_to_file = False
 
     def prekini_meritev(self):
