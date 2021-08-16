@@ -209,27 +209,23 @@ class GUI_MSLK:
         self.gumb_kalibriraj = tk.Button(
             frame_joystick, text="kalibriraj", bg="#eb4034", command=self.kalibracija_laserja)
         self.gumb_kalibriraj.grid(row=3, column=0)
-        # zadodt
+        
         self.gumb_shrani_kal = tk.Button(
             frame_joystick, text="Shrani", bg="#eb4034", command=self.save_kaibracija)
         self.gumb_shrani_kal.grid(row=3, column=1)
 
     # priprava za plotanje slike iz kamere
-        self.fig = Figure(figsize=(8, 6))
-        self.fig.add_subplot(111)
+        self.fig, self.ax = plt.subplots(
+            nrows=1, ncols=1, figsize=(10, 6))
         self.fig.tight_layout()
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.tab1)
-        self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
 #___________________________________tab_2_____________________________________________
     # Polje za nastavitev RPi
-        frame_pi_nastavitve = tk.Frame(
-            master=self.tab2, relief=tk.RAISED, borderwidth=1, width=100, height=100)
-        frame_pi_nastavitve.grid(row=0, column=0)
-        label = tk.Label(master=frame_pi_nastavitve,
-                         text="Nastavitve Raspbrerry Pi")
-        label.grid(row=0, column=0, columnspan=2)
+        frame_pi_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1, text="Nastavitve Raspbrerry Pi")
+        frame_pi_nastavitve.grid(row=0, column=0,sticky="NSEW")
 
         nast1 = tk.Label(master=frame_pi_nastavitve, text="Hostname: ")
         nast1.grid(row=1, column=0)
@@ -270,12 +266,12 @@ class GUI_MSLK:
         pi_nast_gumb2.grid(row=6, column=1)
 
     # Nastavitve merilnih kartic
-        frame_ni_nastavitve = tk.Frame(
-            master=self.tab2, relief=tk.RAISED, borderwidth=1, width=100, height=100)
-        frame_ni_nastavitve.grid(row=0, column=1)
-        label = tk.Label(master=frame_ni_nastavitve,
-                         text="Merilna kartica izhodni kanali")
-        label.grid(row=0, column=0, columnspan=2)
+        frame_ni_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1, text="Merilna kartica izhodni kanali")
+        frame_ni_nastavitve.grid(row=1, column=0,sticky="NSEW")
+        # label = tk.Label(master=frame_ni_nastavitve,
+        #                  text="Merilna kartica izhodni kanali")
+        # label.grid(row=0, column=0, columnspan=2)
 
         nast1_ni = tk.Label(master=frame_ni_nastavitve,
                             text="Izhodni kanal 1: ")
@@ -312,11 +308,10 @@ class GUI_MSLK:
         ni_nast_gumb2 = tk.Button(
             master=frame_ni_nastavitve, text="Save", command=self.save_ni)
         ni_nast_gumb2.grid(row=5, column=1)
-#___________________________________tab_3_____________________________________________
     # nastavitve laserja
         frame_laser_nastavitve = tk.Frame(
-            master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
-        frame_laser_nastavitve.grid(row=0, column=0)
+            master=self.tab2, relief=tk.RAISED, borderwidth=1, width=100, height=100)
+        frame_laser_nastavitve.grid(row=0, column=1,sticky="NSEW")
 
         label_laser_nastavitve = tk.Label(
             frame_laser_nastavitve, text="Nastavitve laserja")
@@ -371,9 +366,9 @@ class GUI_MSLK:
         gumb_seve_laser.grid(row=6, column=1)
 
     # nastavitve silomera/kladiva
-        frame_silomer_nastavitve = tk.Frame(
-            master=self.tab3, relief=tk.RAISED, borderwidth=1, width=100, height=100)
-        frame_silomer_nastavitve.grid(row=1, column=0)
+        frame_silomer_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve silomera/kladiva")
+        frame_silomer_nastavitve.grid(row=1, column=1,sticky="NSEW")
 
         label_silomer_nastavitve = tk.Label(
             frame_silomer_nastavitve, text="Nastavitve silomera / kladiva")
@@ -453,13 +448,13 @@ class GUI_MSLK:
         gumb_seve_silomer_kladivo.grid(row=8, column=1)
 
     # nastavitve zajema
-        frame_zajem_nastavitve = tk.Frame(
-            master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_zajem_nastavitve.grid(row=2, column=0)
+        frame_zajem_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve meritev")
+        frame_zajem_nastavitve.grid(row=0, column=2,rowspan=2)
 
-        label_zajem_nastavitve = tk.Label(
-            frame_zajem_nastavitve, text="Nastavitve meritev")
-        label_zajem_nastavitve.grid(row=0, column=0, columnspan=2)
+        # label_zajem_nastavitve = tk.Label(
+        #     frame_zajem_nastavitve, text="Nastavitve meritev")
+        # label_zajem_nastavitve.grid(row=0, column=0, columnspan=2)
 
         label_zajem_nastavitve = tk.Label(
             frame_zajem_nastavitve, text="Frekvenca merilne kartice [Hz]:")
@@ -606,11 +601,12 @@ class GUI_MSLK:
         gumb_seve_zajem.grid(row=14, column=1)
 
         self.urejanje_silomer_kladivo()
+#___________________________________tab_3_____________________________________________
 
     # plotanje
         frame_tab3_plotanje = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_tab3_plotanje.grid(row=0, column=1, rowspan=4)
+        frame_tab3_plotanje.grid(row=0, column=1, rowspan=4, sticky='EWNS')
 
         self.tabControltab3 = ttk.Notebook(frame_tab3_plotanje)
 
@@ -625,7 +621,7 @@ class GUI_MSLK:
 
         # tab3->tab1 meritve
         self.fig_meritev, self.axes_meritev = plt.subplots(
-            nrows=2, ncols=1, figsize=(8, 6))
+            nrows=2, ncols=1, figsize=(10, 6))
         # laser
         self.axes_meritev[0].set_title("Laser")
         self.axes_meritev[0].set_xlabel("Čas [s]")
@@ -643,7 +639,7 @@ class GUI_MSLK:
         self.graph_meritve = FigureCanvasTkAgg(
             self.fig_meritev, master=self.tab3tab1)
         self.graph_meritve.get_tk_widget().pack(
-            side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+            side=tk.BOTTOM, fill=tk.BOTH, expand=1)
         # self.graph_meritve.draw()
 
         self.meritve_toolbar = NavigationToolbar2Tk(
@@ -721,7 +717,7 @@ class GUI_MSLK:
         self.entry_stevilo_ciklov.insert(0, self.nastavitve["število ciklov"])
 
         self.gumb_začni_meritev = tk. Button(
-            frame_gumbi_tab3, text="Začni meritev", command=self.zacni_meritev)
+            frame_gumbi_tab3, text="Začni meritev", command=self.zacni_meritev,bg="#89eb34")
         self.gumb_začni_meritev.grid(row=3, column=0)
 
         self.gumb_prekini_meritev = tk. Button(
@@ -734,7 +730,7 @@ class GUI_MSLK:
         self.spremeni_stanje(self.gumb_doloci_pole)
 
         self.gumb_plotaj_lastne = tk. Button(
-            frame_gumbi_tab3, text="Plotaj lastne oblike", command=self.lastne_oblike_plot)
+            frame_gumbi_tab3, text="Lastne oblike", command=self.lastne_oblike_plot)
         self.gumb_plotaj_lastne.grid(row=4, column=1)
         self.spremeni_stanje(self.gumb_plotaj_lastne)
 
@@ -801,12 +797,12 @@ class GUI_MSLK:
         self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
     #generiranje signalov
-        frame_generiranje_signalov_tab3 = tk.Frame(
-            master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_generiranje_signalov_tab3.grid(row=2, column=2)
+        # frame_generiranje_signalov_tab3 = tk.Frame(
+        #     master=self.tab3, relief=tk.RAISED, borderwidth=1)
+        # frame_generiranje_signalov_tab3.grid(row=2, column=2)
 
-        label_generiranje_signalov = tk.Label(frame_generiranje_signalov_tab3,text="Generiranje signalov")
-        label_generiranje_signalov.grid(row=0,column=0,columnspan=2)
+        # label_generiranje_signalov = tk.Label(frame_generiranje_signalov_tab3,text="Generiranje signalov")
+        # label_generiranje_signalov.grid(row=0,column=0,columnspan=2)
 
         self.switch()
 # =================================Funkcije===========================================
@@ -894,8 +890,11 @@ class GUI_MSLK:
         self.prikazano_mesto = 1
         self.kontrola_gumbov_podatkov()
 
-        self.update_grafe([], 1, 1, self.data_freq,
-                          self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
+        self.update_grafe(np.linspace(0, 1,len(self.data_exc[0,0])),
+                            self.data_exc[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_h[self.prikazan_cikelj-1, self.prikazano_mesto-1],
+                            self.data_freq,
+                            self.data_frf[self.prikazan_cikelj-1, self.prikazano_mesto-1])
 
     def kontrola_gumbov_podatkov(self):
         """Funkcija nadoruje da se gubi za prehanjanje med različnimi podatki pravilno 
@@ -1385,15 +1384,21 @@ class GUI_MSLK:
     def save_zajem(self):
         if self.var_silomer.get():
             self.nastavitve["osnovna frekvenca silomer"] = int(self.entry_osnovna_frekvenca.get())
+            self.nastavitve["frekvenca vzorčenja silomer"] = self.mozne_frekvence.index(self.variable.get())
             self.nastavitve["čas silomer"] = float(self.entry_cas_meritve.get())
-            self.nastavitve["vzorcev za povprečenje silomer"]= int(self.entry_povprečenje.get())
-            self.nastavitve["value exc silomer"]= float(self.entry_okno_exc_value.get())
-            self.nastavitve["value h silomer"]=float(self.entry_okno_h_value.get())
+            self.nastavitve["vzorcev za povprečenje silomer"] = int(self.entry_povprečenje.get())
+            self.nastavitve["okno exc silomer"] = self.okna.index(self.variable_okno_exc.get())
+            self.nastavitve["value exc silomer"] = float(self.entry_okno_exc_value.get())
+            self.nastavitve["okno h silomer"] = self.okna.index(self.variable_okno_h.get())
+            self.nastavitve["value h silomer"] = float(self.entry_okno_h_value.get())
         else:
             self.nastavitve["osnovna frekvenca kladivo"] = int(self.entry_osnovna_frekvenca.get())
+            self.nastavitve["frekvenca vzorčenja kladivo"] = self.mozne_frekvence.index(self.variable.get())
             self.nastavitve["čas kladivo"] = float(self.entry_cas_meritve.get())
             self.nastavitve["vzorcev za povprečenje kladivo"]= int(self.entry_povprečenje.get())
+            self.nastavitve["okno exc kladivo"] = self.okna.index(self.variable_okno_exc.get())
             self.nastavitve["value exc kladivo"]= float(self.entry_okno_exc_value.get())
+            self.nastavitve["okno h kladivo"] = self.okna.index(self.variable_okno_h.get())
             self.nastavitve["value h kladivo"]=float(self.entry_okno_h_value.get())
         self.nastavitve["file_name"]=self.entry_ime_datoteke.get()
         self.nastavitve["dir"]=self.entry_path.get()
@@ -1466,11 +1471,9 @@ class GUI_MSLK:
 
     def imgshow(self):
         """Funkcija skrbi za prikaz slike pridobljene iz RPi"""
-        self.fig.clear()
-        self.fig.add_subplot(111).imshow(self.image[:, :, ::-1])
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.tab1)
+        self.ax.cla()
+        self.ax.imshow(self.image[:, :, ::-1])
         self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
 
     def izbriši_zadnjo_tarčo(self):
         """S seznama tarč se izbriše zadnja tarča"""
@@ -1539,24 +1542,24 @@ class GUI_MSLK:
 
     def update_grafe(self, t, exc, h, f, frf):
         """Posodobijo se vis grafi-- za enkrat je tako da se posodobijo samo FRF"""
-        # začasno!!!!!!!
-        if len(t) != 0:
-            # plotanje za laser
-            self.axes_meritev[0].cla()
-            self.axes_meritev[0].plot(t, h)
-            self.axes_meritev[0].set_title("Laser")
-            self.axes_meritev[0].set_xlabel("Čas [s]")
-            self.axes_meritev[0].set_ylabel("Hitreost [mm/s]")
-            self.axes_meritev[0].grid()
-            # plotanje za silomer
-            self.axes_meritev[1].cla()
-            self.axes_meritev[1].plot(t, exc)
-            self.axes_meritev[1].set_title("Silomer")
-            self.axes_meritev[1].set_xlabel("Čas [s]")
-            self.axes_meritev[1].set_ylabel("Sila [N]")
-            self.axes_meritev[1].grid()
+        
 
-            self.graph_meritve.draw()
+        # plotanje za laser
+        self.axes_meritev[0].cla()
+        self.axes_meritev[0].plot(t, h)
+        self.axes_meritev[0].set_title("Laser")
+        self.axes_meritev[0].set_xlabel("Čas [s]")
+        self.axes_meritev[0].set_ylabel("Hitreost [mm/s]")
+        self.axes_meritev[0].grid()
+        # plotanje za silomer
+        self.axes_meritev[1].cla()
+        self.axes_meritev[1].plot(t, exc)
+        self.axes_meritev[1].set_title("Silomer")
+        self.axes_meritev[1].set_xlabel("Čas [s]")
+        self.axes_meritev[1].set_ylabel("Sila [N]")
+        self.axes_meritev[1].grid()
+
+        self.graph_meritve.draw()
 
         # FRF
         self.axes_FRF[0].cla()
@@ -1884,10 +1887,10 @@ class GUI_MSLK:
         winsound.Beep(frequency, duration)
         winsound.Beep(frequency, duration)
 
+if __name__ == '__main__':
+    root = tk.Tk()
+    my_gui = GUI_MSLK(root)
+    root.mainloop()
 
-root = tk.Tk()
-my_gui = GUI_MSLK(root)
-root.mainloop()
-
-# zapiranje povezav
-my_gui.scanner.kamera.disconnect()
+    # zapiranje povezav
+    my_gui.scanner.kamera.disconnect()
