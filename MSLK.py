@@ -40,7 +40,7 @@ class Meritev_demo:
         """primer funkcije, ki izvaja meritev"""
         self.t=t
 
-    def naredi_meritev():
+    def naredi_meritev(self):
         """izvajanje meritve"""
         time.sleep(self.t)
 
@@ -517,8 +517,8 @@ class MLSK_GUI:
         self.master.title("MSLK")
         self.master.iconbitmap("./files/logo.ico")
     # spremenljivke
-        self.U_x=2
-        self.U_y=1.5
+        self.U_x=2    #začetna voltaža zrcala
+        self.U_y=1.5  #začetna voltaža zrcala
         self.continuePlottingImg = False
         self.prekini = False
 
@@ -560,10 +560,6 @@ class MLSK_GUI:
         frame_kontorla_kalibracije = tk.LabelFrame(
             master=self.master, relief=tk.RAISED, borderwidth=1, text="Kalibracija laserja/kamere")
         frame_kontorla_kalibracije.grid(row=3, column=1, columnspan=2)
-
-        # label_kontrola_kalibracije = tk.Label(
-        #     frame_kontorla_kalibracije, text="Kalibracija laserja/kamere")
-        # label_kontrola_kalibracije.grid(row=0, column=0, columnspan=3)
 
         label_kal_premik = tk.Label(
             frame_kontorla_kalibracije, text="Kal. premik [V]")
@@ -613,17 +609,17 @@ class MLSK_GUI:
         self.label_Uy.grid(row=1, column=1)
 
         self.gumb_kalibriraj = tk.Button(
-            frame_joystick, text="kalibriraj", bg="#eb4034", command=self.kalibracija_laserja)
-        self.gumb_kalibriraj.grid(row=3, column=0)
+            frame_kontorla_kalibracije, text="Ponovno kalibriraj", bg="#eb4034", command=self.kalibracija_laserja)
+        self.gumb_kalibriraj.grid(row=4, column=0,columnspan=2)
     
-
+        self.kalibracija_laserja()
 
         self.master.mainloop()
 
-        self.scanner.kamera.disconnect()
+        
 
 
-#____________________________________funkcije__________________________
+    #____________________________________funkcije__________________________
     def gh1(self):
         self.change_state()
         threading.Thread(target=self.zajemanje_slike).start()
@@ -669,7 +665,6 @@ class MLSK_GUI:
         self.scanner.k = self.scanner.laser.kalibracija_basic(
             self.U_x, self.U_y, self.U_x - float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get()))
         self.scanner.položaj_zrcal = np.array([self.U_x- float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get())])
-        self.stslabel.configure(text=f"Kalibracija:{self.scanner.k}")
 
     def laser_Ux_gor(self):
         """Sprememba poločaja zrcala na podlagi napetosti za smer x,
@@ -750,6 +745,7 @@ class MLSK_GUI:
             if self.prekini == True:
                 self.prekini = False
                 break
+        print("konec meritve")
     
     def prekini_meritev(self):
             """Funkcija namenjena kontroli funkcije self.zacni_meritev"""
@@ -758,6 +754,7 @@ class MLSK_GUI:
     def pomik_na_tarčo(self,i):
         self.korekcija_tarč()
         self.image = self.scanner.namesto(self.tarče[i])
+        self.image = self.scanner.kamera.req("img")
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
         self.imgshow()
 
