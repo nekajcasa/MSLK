@@ -16,7 +16,11 @@ import numpy as np
 import socket
 import matplotlib.pyplot as plt
 import scipy.signal
-
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
+import threading
 
 # =============================================================================
 # class :
@@ -31,6 +35,16 @@ import scipy.signal
 #         time.sleep(self.t)
 #         print("konec meritve")
 # =============================================================================
+class Meritev_demo:
+    def __init__(self,t):
+        """primer funkcije, ki izvaja meritev"""
+        self.t=t
+
+    def naredi_meritev():
+        """izvajanje meritve"""
+        time.sleep(self.t)
+
+
 class Meritev:
 
     def __init__(self, ch_laser="",
@@ -137,7 +151,7 @@ class RPi:
 
 class Camera:
 
-    def __init__(self, pi):
+    def __init__(self, Pi):
         """Definira se objek kamera, ki skrbi za povezavo s kamero (RPi),
         pošiljanje slik in ostalih podatkov, tukaj se tudi definirajo lastnosi
         kamere
@@ -150,7 +164,7 @@ class Camera:
             treshold...
             !!!
         """
-        self.pi = RPi()
+        self.pi = Pi
 
     def connect(self):
         """Povezava in vspostavitev vseh povezav med RPi in PC"""
@@ -224,8 +238,8 @@ class Camera:
 
 class LaserHead:
 
-    def __init__(self, kamera, ch1="cDAQ2Mod1/ao0", ch2="cDAQ2Mod1/ao1"):
-        self.kamera = kamera
+    def __init__(self, Kamera, ch1="cDAQ10Mod1/ao0", ch2="cDAQ10Mod1/ao1"):
+        self.kamera = Kamera
         self.ch1 = ch1
         self.ch2 = ch2
         self.task = nidaqmx.Task()
@@ -274,15 +288,15 @@ class LaserHead:
 
 class Scanner:
 
-    def __init__(self, kamera, laser, meritev, položaj_zrcal, k):
+    def __init__(self, Kamera, Laser, Meritev, položaj_zrcal, k):
         """kamera : objekt class Camera\n
         laser : objekt class LaserHead\n
         meritev : objekt class Meritev\n
         položaj zrcal : zadnji položaj zrcal v voltih v obliki np.array\n
         k : koeficient med piksli in volti za krmiljenje zrcal"""
-        self.kamera = kamera
-        self.laser = laser
-        self.meritev = meritev
+        self.kamera = Kamera
+        self.laser = Laser
+        self.meritev = Meritev
         self.položaj_zrcal = np.array([položaj_zrcal[1], položaj_zrcal[1]])
         self.k = k
         self.tarče = None
@@ -368,7 +382,6 @@ class Scanner:
                 img1 = self.kamera.req("img")
                 self.laser.premik_volt(
                     self.položaj_zrcal[0], self.položaj_zrcal[1])
-                #image = self.narisi_tarce(image, tarče)
                 return img1
                 break
             else:
@@ -444,7 +457,9 @@ class Scanner:
                             break
                     # meritev se izvaja dokler se ne izvede "mirna meritev"
                     while True:
-                        self.meritev.izvajanje_meritve(c, vzorec)
+                        ##########TUKAJ_SE_DODA_DUNKCIJO_MERITVE################
+                        self.meritev.naredi_meritev()
+                        ########################################################
                         self.laser.premik_volt(self.položaj_zrcal[0], -8)
                         # slika pred meritvijo
                         img0 = img1
@@ -491,28 +506,294 @@ class Scanner:
         """izračuna premik slike"""
         self.tarče = self.tarče+translation
 
-#showcase
+
+class MLSK_GUI:
+
+    def __init__(self,Scanner):
+        """odpre se GUI za določanje tarč"""
+        self.tarče=[]
+        self.scanner = Scanner
+        self.master = tk.Tk()
+        self.master.title("MSLK")
+        self.master.iconbitmap("./files/logo.ico")
+    # spremenljivke
+        self.U_x=2
+        self.U_y=1.5
+        self.continuePlottingImg = False
+        self.prekini = False
+
+    # definiranje prostora za sliko
+        self.fig, self.ax = plt.subplots(
+            nrows=1, ncols=1, figsize=(10, 6))
+        self.fig.tight_layout()
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.master)
+        self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
+        self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
+
+        self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    # povezava in tarče
+        frame_kontrola_tarč = tk.Frame(self.master)
+        frame_kontrola_tarč.grid(row=0,column=1,sticky="EW")
+
+        self.gumb_izbriši_zadnjo_tarčo = tk.Button(
+            frame_kontrola_tarč, text="Izbriši zadnjo tarčo", command=self.izbriši_zadnjo_tarčo)
+        self.gumb_izbriši_zadnjo_tarčo.grid(row=0, column=0)
+
+        self.gumb_izbriši_vse_tarče = tk.Button(
+            frame_kontrola_tarč, text="Izbriši vse tarče", command=self.izbriši_vse_tarče)
+        self.gumb_izbriši_vse_tarče.grid(row=0, column=1)
+
+        self.gumb_pretakanje_slike = tk.Button(
+            frame_kontrola_tarč, text="Pretakanje slike \n start/stop", command=self.gh1)
+        self.gumb_pretakanje_slike.grid(row=1, column=0,columnspan=2,sticky="EW")
+
+        self.gumb_začni_meritrv = tk.Button(frame_kontrola_tarč,text="ZAČNI MERITEV",bg="#baff82",command=self.zacni_meritev)
+        self.gumb_začni_meritrv.grid(row=2,column=0,columnspan=2,sticky="EW")
+
+        self.gumb_začni_meritrv = tk.Button(frame_kontrola_tarč,text="Prekini meritev",bg="#ff6b6b",command=self.prekini_meritev)
+        self.gumb_začni_meritrv.grid(row=3,column=0,columnspan=2,sticky="EW")
+
+    # kontrole kalibracije
+        frame_kontorla_kalibracije = tk.LabelFrame(
+            master=self.master, relief=tk.RAISED, borderwidth=1, text="Kalibracija laserja/kamere")
+        frame_kontorla_kalibracije.grid(row=3, column=1, columnspan=2)
+
+        # label_kontrola_kalibracije = tk.Label(
+        #     frame_kontorla_kalibracije, text="Kalibracija laserja/kamere")
+        # label_kontrola_kalibracije.grid(row=0, column=0, columnspan=3)
+
+        label_kal_premik = tk.Label(
+            frame_kontorla_kalibracije, text="Kal. premik [V]")
+        label_kal_premik.grid(row=1, column=0, columnspan=2)
+
+        self.entry_kal_premik = tk.Entry(master=frame_kontorla_kalibracije,width=6)
+        self.entry_kal_premik.grid(row=1, column=2)
+        self.entry_kal_premik.insert(0, 0.3)
+
+        label_U_pomik = tk.Label(
+            frame_kontorla_kalibracije, text="Delata U (pada) [V]")
+        label_U_pomik.grid(row=2, column=0, columnspan=2)
+
+        self.entry_U_pomik = tk.Entry(master=frame_kontorla_kalibracije,width=6)
+        self.entry_U_pomik.grid(row=2, column=2)
+        self.entry_U_pomik.insert(0, 0.1)
+
+        frame_joystick = tk.Frame(frame_kontorla_kalibracije)
+        frame_joystick.grid(row=3, column=0, columnspan=3)
+
+        self.gumb_Ux_gor = tk.Button(
+            frame_joystick, text="/\\", bg="#32a852", command=self.laser_Ux_gor)
+        self.gumb_Ux_gor.grid(row=0, column=0)
+
+        self.gumb_Ux_dol = tk.Button(
+            frame_joystick, text="\\/", bg="#32a852", command=self.laser_Ux_dol)
+        self.gumb_Ux_dol.grid(row=2, column=0)
+
+        self.gumb_Uy_gor = tk.Button(
+            frame_joystick, text="/\\", bg="#32a852", command=self.laser_Uy_gor)
+        self.gumb_Uy_gor.grid(row=0, column=1)
+
+        self.gumb_Uy_dol = tk.Button(
+            frame_joystick, text="\\/", bg="#32a852", command=self.laser_Uy_dol)
+        self.gumb_Uy_dol.grid(row=2, column=1)
+
+        self.text_Ux = tk.StringVar()
+        self.text_Ux.set(f"{self.U_x:.2f}")
+
+        self.label_Ux = tk.Label(frame_joystick, textvariable=self.text_Ux)
+        self.label_Ux.grid(row=1, column=0)
+
+        self.text_Uy = tk.StringVar()
+        self.text_Uy.set(f"{self.U_y:.2f}")
+
+        self.label_Uy = tk.Label(frame_joystick, textvariable=self.text_Uy)
+        self.label_Uy.grid(row=1, column=1)
+
+        self.gumb_kalibriraj = tk.Button(
+            frame_joystick, text="kalibriraj", bg="#eb4034", command=self.kalibracija_laserja)
+        self.gumb_kalibriraj.grid(row=3, column=0)
+    
+
+
+        self.master.mainloop()
+
+        self.scanner.kamera.disconnect()
+
+
+#____________________________________funkcije__________________________
+    def gh1(self):
+        self.change_state()
+        threading.Thread(target=self.zajemanje_slike).start()
+
+    def zajemanje_slike(self):
+        """Konstantno zajemanje slike, funkcija je aktiviran preko threading"""
+        while self.continuePlottingImg:
+            self.image = self.scanner.kamera.req("img")
+            self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+            self.imgshow()
+
+    def change_state(self):
+        """za nadzor funkcije self.zajemanje_slike"""
+        if self.continuePlottingImg == True:
+            self.continuePlottingImg = False
+        else:
+            self.continuePlottingImg = True
+
+    def imgshow(self):
+        """Funkcija skrbi za prikaz slike pridobljene iz RPi"""
+        self.ax.cla()
+        self.ax.imshow(self.image[:, :, ::-1])
+        self.canvas.draw()
+        #self.canvas.get_tk_widget().grid(row=0, column=0, rowspan=10)
+
+    def on_click(self, event):
+            """Funkcija ki opazuje in določa kaj se zgodi ko kliknemo na sliko"""
+            if event.inaxes is not None:
+                tarča = [event.xdata, event.ydata]
+                self.tarče.append(tarča)
+                self.image = cv2.imread("img1_2_1.jpg")
+                self.image = self.scanner.kamera.req("img")
+                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.imgshow()
+                #self.stslabel.configure(text=f"Prikaz slike. Dodana tarča {len(self.tarče)}.")
+            else:
+                print("Clicked ouside axes bounds but inside plot window")
+                #self.stslabel.configure(
+                #    text="Clicked ouside axes bounds but inside plot window")
+
+    def kalibracija_laserja(self):
+        """Izvede se ponova kalibracija laseraj na podlagi vpisanih vrednosti"""
+        self.scanner.k = self.scanner.laser.kalibracija_basic(
+            self.U_x, self.U_y, self.U_x - float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get()))
+        self.scanner.položaj_zrcal = np.array([self.U_x- float(self.entry_U_pomik.get()), self.U_y - float(self.entry_U_pomik.get())])
+        self.stslabel.configure(text=f"Kalibracija:{self.scanner.k}")
+
+    def laser_Ux_gor(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer x,
+         POVEČANJE vrednosti"""
+        self.U_x += float(self.entry_U_pomik.get())
+        self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
+        self.text_Ux.set(f"{self.U_x:.2f}")
+        self.scanner.laser.premik_volt(self.U_x, self.U_y)
+        self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    def laser_Ux_dol(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer x,
+         ZMANŠANJE vrednosti"""
+        self.U_x -= float(self.entry_U_pomik.get())
+        self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
+        self.text_Ux.set(f"{self.U_x:.2f}")
+        self.scanner.laser.premik_volt(self.U_x, self.U_y)
+        self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    def laser_Uy_gor(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer y,
+         POVEČANJE vrednosti"""
+        self.U_y += float(self.entry_U_pomik.get())
+        self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
+        self.text_Uy.set(f"{self.U_y:.2f}")
+        self.scanner.laser.premik_volt(self.U_x, self.U_y)
+        self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    def laser_Uy_dol(self):
+        """Sprememba poločaja zrcala na podlagi napetosti za smer y,
+         ZMANŠANJE vrednosti"""
+        self.U_y -= float(self.entry_U_pomik.get())
+        self.scanner.položaj_zrcal = np.array([self.U_x, self.U_y])
+        self.text_Uy.set(f"{self.U_y:.2f}")
+        self.scanner.laser.premik_volt(self.U_x, self.U_y)
+        self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    def izbriši_zadnjo_tarčo(self):
+        """S seznama tarč se izbriše zadnja tarča"""
+        if len(self.tarče) != 0:
+            self.tarče = self.tarče[:-1]
+            self.image = self.scanner.kamera.req("img")
+            if len(self.tarče) != 0:
+                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.imgshow()
+                #self.fig.canvas.callbacks.connect('button_press_event', on_click)
+            else:
+                self.imgshow()
+
+    def izbriši_vse_tarče(self):
+        """pobriše se celoten seznam tarč"""
+        self.tarče = []
+        self.image = self.scanner.kamera.req("img")
+        self.imgshow()
+    
+    def zacni_meritev(self):
+        threading.Thread(target=self.real_zacni_meritev).start()
+
+    def real_zacni_meritev(self):
+        """Funkcija vodi laser do tarče do tarče in naredi meritev"""
+
+        for i in range(len(self.tarče)):
+            while True:
+                self.pomik_na_tarčo(i)
+                # spodnja funkcija definira kaj se dogaja ko žarek pride na mesto
+                self.scanner.meritev.naredi_meritev()
+                dovoljen_premik_kamere = 1
+                if self.korekcija_tarč(dovoljen_premik_kamere) == False:
+                    break
+            if self.prekini == True:
+                self.prekini = False
+                break
+    
+    def prekini_meritev(self):
+            """Funkcija namenjena kontroli funkcije self.zacni_meritev"""
+            self.prekini = True
+
+    def pomik_na_tarčo(self,i):
+        self.korekcija_tarč()
+        self.image = self.scanner.namesto(self.tarče[i])
+        self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.imgshow()
+
+    def korekcija_tarč(self,se_dovoljen_premik=1):
+        """če se zazna premik slike za več kot se_dovoljen_premik (vrednost v pikslih)
+        se zgoti korekcija pozicije tarč
+
+        ze e zgodi korekcija frne funkcija True,
+        drugače pa False"""
+        #prva slika
+        img0=self.image
+        #druga slika
+        self.image=self.scanner.kamera.req("img")
+        img1=self.image
+        translation = self.scanner.img_translation(img0, img1)
+        if np.sqrt(translation[0]**2+translation[1]**2) > se_dovoljen_premik:
+            self.tarče = self.tarče+translation
+            return True
+        else: 
+            return False
+
+#===============================showcase===============================
 if __name__ == '__main__':
     # določanje objektov
     Pi = RPi()
     pi_kamera = Camera(Pi)
-    laser = LaserHead(pi_kamera)
-    meritev = Meritev(5)
+    laser = LaserHead(pi_kamera,ch1="cDAQ10Mod1/ao0", ch2="cDAQ10Mod1/ao1")
+    meritev = Meritev_demo(5)
+    # določitev začetnega poločaja zrcal
     položaj_zrcal = np.array([1.7, 1.7])
     scanner = Scanner(pi_kamera, laser, meritev, položaj_zrcal, None)
 
-    # povezovanje in aktivacija RPi
+
+    # povezovanje na kamero
     pi_kamera.connect()
-    # kalibracija laserja
-    scanner.k = laser.kalibracija_basic(
-        2, 2, položaj_zrcal[0], položaj_zrcal[1])
-    # zahtevanje slike od RPi in poltanje slike
-    image = pi_kamera.req("img")
-    scanner.plotimg(image)
-    # določanje tarč
-    scanner.dolocanje_tarc()
-    # izvajanje pograma
-    for i in range(5):
-        scanner.cikelj(i+1)
-    # izklaplanje
+    #Gui za določanje tarč
+    MLSK_GUI(scanner)
+    # zapiranje povezav
     pi_kamera.disconnect()

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pyEMA
 from pyFRF import FRF
 
-frekvenca, frf_gui, exc, h = np.load("meritev_kladivo.npy", allow_pickle=True)
+frekvenca, frf_gui, exc, h = np.load("meritev_kladivo_kovinska_2.npy", allow_pickle=True)
 t=np.linspace(0, 1,len(exc[0,0]))
 
 meritev=0
