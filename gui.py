@@ -366,10 +366,6 @@ class GUI_MSLK:
             master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve silomera/kladiva")
         frame_silomer_nastavitve.grid(row=1, column=1,sticky="NSEW")
 
-        label_silomer_nastavitve = tk.Label(
-            frame_silomer_nastavitve, text="Nastavitve silomera / kladiva")
-        label_silomer_nastavitve.grid(row=0, column=0, columnspan=2)
-
         self.nastavitve["start silomer/kladivo"]
         self.var_silomer = tk.BooleanVar()
         self.var_silomer.set(self.nastavitve["start silomer/kladivo"])

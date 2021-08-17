@@ -22,19 +22,7 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.figure import Figure
 import threading
 
-# =============================================================================
-# class :
-#
-#     def __init__(self,t):
-#         self.t=t
-#
-#     def izvajanje_meritve(self,c,n):
-#         print("/////////////////////////////////////////////////////////")
-#         print(f"...izvaja se cikelj {c}, MERITEV vzorca {n}...")
-#         print("/////////////////////////////////////////////////////////")
-#         time.sleep(self.t)
-#         print("konec meritve")
-# =============================================================================
+
 class Meritev_demo:
     def __init__(self,t):
         """primer funkcije, ki izvaja meritev"""
@@ -779,7 +767,12 @@ class MLSK_GUI:
 #===============================showcase===============================
 if __name__ == '__main__':
     # določanje objektov
-    Pi = RPi()
+    Pi = RPi(hostname="pi-kamera",
+             port=22,
+             username="pi",
+             password="pi",
+             skripta="Desktop/laserV3.py")
+
     pi_kamera = Camera(Pi)
     laser = LaserHead(pi_kamera,ch1="cDAQ10Mod1/ao0", ch2="cDAQ10Mod1/ao1")
     meritev = Meritev_demo(5)
