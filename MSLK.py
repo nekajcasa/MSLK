@@ -206,6 +206,7 @@ class Camera:
                     run = 0
             data = data[:-1]
             data = data[1:]
+            print(data)
             data = np.float64(data.split(','))
             return data
         elif dtyp == "img":
@@ -293,6 +294,13 @@ class Scanner:
         plt.clf()
         plt.imshow(img[:, :, ::-1])
         plt.show()
+
+    def narisi_ROI(self,img,ROI):
+        if len(ROI)==2:
+            cv2.rectangle(img, ROI[0], ROI[1],
+                              (70, 180, 225), thickness=2)
+        return img
+
 
     def narisi_tarce(self, img, tarče):
         """funkcija nariše tarče na sliko, tarče so podane v obliki seznama"""

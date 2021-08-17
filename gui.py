@@ -115,6 +115,8 @@ class GUI_MSLK:
         self.objek_je_mirn = False
         self.serija0 = False
         self.triger = False
+        self.tocke_ROI=-1
+        self.ROI_kordinate=[]
 #____________________________Definicija_zavihkov______________________________________
 
         tabControl = ttk.Notebook(self.master)
@@ -150,10 +152,14 @@ class GUI_MSLK:
             self.tab1, text="Pretakanje slike \n start/stop", command=self.gh1, bg="red", fg="white")
         self.gumb_pretakanje_slike.grid(row=2, column=1, columnspan=2)
 
+        self.gumb_ROI = tk.Button(
+            self.tab1, text="ROI", command=self.ROI, bg="#88b5fc")#, fg="white")
+        self.gumb_ROI.grid(row=3, column=1, columnspan=2)
+
     # kontrole kalibracije
         frame_kontorla_kalibracije = tk.Frame(
             master=self.tab1, relief=tk.RAISED, borderwidth=1, width=100, height=100)
-        frame_kontorla_kalibracije.grid(row=3, column=1, columnspan=2)
+        frame_kontorla_kalibracije.grid(row=4, column=1, columnspan=2)
 
         label_kontrola_kalibracije = tk.Label(
             frame_kontorla_kalibracije, text="Kalibracija laserja/kamere")
@@ -825,11 +831,13 @@ class GUI_MSLK:
 
                 self.image = self.scanner.kamera.req("img")
                 self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
                 self.imgshow()
 
                 self.povezava_vspostavljena_boolean = True
                 self.switch()
         threading.Thread(target=real_connect).start()
+
 
     def disconnect(self):
         """funkcija za prekinitev povezave z RPi"""
@@ -840,6 +848,11 @@ class GUI_MSLK:
             self.switch()
         else:
             self.stslabel.configure(text="Povezava je že prekinjena")
+
+    def ROI(self):
+        self.tocke_ROI=0
+        self.ROI_kordinate=[]
+        self.stslabel.configure(text="Izbira ROI")
 
     def izračun_možnih_frekvenc(self):
         """Funkcija izračuna možne frekvence vzorčenja in jih ponudi uporabniku"""
@@ -1151,6 +1164,7 @@ class GUI_MSLK:
         self.scanner.laser.premik_volt(self.U_x, self.U_y)
         self.image = self.scanner.kamera.req("img")
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.imgshow()
 
     def laser_Ux_dol(self):
@@ -1162,6 +1176,7 @@ class GUI_MSLK:
         self.scanner.laser.premik_volt(self.U_x, self.U_y)
         self.image = self.scanner.kamera.req("img")
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.imgshow()
 
     def laser_Uy_gor(self):
@@ -1173,6 +1188,7 @@ class GUI_MSLK:
         self.scanner.laser.premik_volt(self.U_x, self.U_y)
         self.image = self.scanner.kamera.req("img")
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.imgshow()
 
     def laser_Uy_dol(self):
@@ -1184,6 +1200,7 @@ class GUI_MSLK:
         self.scanner.laser.premik_volt(self.U_x, self.U_y)
         self.image = self.scanner.kamera.req("img")
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.imgshow()
 
     def cikelj_nazaj(self):
@@ -1270,6 +1287,7 @@ class GUI_MSLK:
         while self.continuePlottingImg:
             self.image = self.scanner.kamera.req("img")
             self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+            self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
             self.imgshow()
 
     def change_state(self):
@@ -1461,14 +1479,34 @@ class GUI_MSLK:
 
     def on_click(self, event):
         """Funkcija ki opazuje in določa kaj se zgodi ko kliknemo na sliko"""
+        if self.continuePlottingImg==True:
+            self.continuePlottingImg=False
         if event.inaxes is not None:
             tarča = [event.xdata, event.ydata]
-            self.tarče.append(tarča)
-            self.image = cv2.imread("img1_2_1.jpg")
-            self.image = self.scanner.kamera.req("img")
-            self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-            self.imgshow()
-            self.stslabel.configure(text=f"Prikaz slike. Dodana tarča {len(self.tarče)}.")
+            if self.tocke_ROI==-1:
+                self.tarče.append(tarča)
+                self.image = self.scanner.kamera.req("img")
+                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
+                self.imgshow()
+                self.stslabel.configure(text=f"Prikaz slike. Dodana tarča {len(self.tarče)}.")
+            else:
+                self.ROI_kordinate.append(tarča)
+                self.stslabel.configure(text=f"Prikaz slike. Dodana ROI točka {len(self.ROI_kordinate)}.")
+                if len(self.ROI_kordinate)==2:
+                    self.ROI_kordinate=[[int(self.ROI_kordinate[0][0]),int(self.ROI_kordinate[0][1])],
+                                        [int(self.ROI_kordinate[1][0]),int(self.ROI_kordinate[1][1])]]
+                    x1=str(min(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
+                    y1=str(min(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
+                    x2=str(max(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
+                    y2=str(max(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
+                    ROI="roi,"+x1+":"+y1+":"+x2+":"+y2
+                    self.scanner.kamera.pi_kamera.send(bytes(ROI, "utf-8"))
+                    self.tocke_ROI=-1
+                self.image = self.scanner.kamera.req("img")
+                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
+                self.imgshow()
         else:
             self.stslabel.configure(
                 text="Clicked ouside axes bounds but inside plot window")
@@ -1487,6 +1525,7 @@ class GUI_MSLK:
             self.image = self.scanner.kamera.req("img")
             if len(self.tarče) != 0:
                 self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
                 self.imgshow()
                 #self.fig.canvas.callbacks.connect('button_press_event', on_click)
             else:
@@ -1497,6 +1536,7 @@ class GUI_MSLK:
         """pobriše se celoten seznam tarč"""
         self.tarče = []
         self.image = self.scanner.kamera.req("img")
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.stslabel.configure(text="Vse tarče odstranjene")
         self.imgshow()
 
@@ -1528,6 +1568,7 @@ class GUI_MSLK:
         self.korekcija_tarč()
         self.image = self.scanner.namesto(self.tarče[i])
         self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+        self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
         self.imgshow()
 
     def pomik_na_nasledno_tarčo(self):
