@@ -21,6 +21,8 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 import threading
+from nidaqmx.stream_writers import (AnalogSingleChannelWriter)
+import pyExSi
 
 
 class Meritev_demo:
@@ -212,6 +214,7 @@ class Camera:
         elif dtyp == "img":
             ime, data = self.image_hub.recv_image()
             self.image_hub.send_reply(b'OK')
+            print(ime)
             return data
         else:
             print("napačen zahtevek, opcije \"loc\" ali \"img\"")
@@ -311,7 +314,7 @@ class Scanner:
             cv2.rectangle(img, start_point, end_point,
                           (140, 225, 70), thickness=5)
             p_text = (int(i[0]+15), int(i[1]-15))
-            cv2.putText(img, f"T{j}", p_text, 2, 3, (140, 225, 70))
+            cv2.putText(img, f"T{j}", p_text, 2, 1, (140, 225, 70))
             j += 1
 
         return img
@@ -358,7 +361,7 @@ class Scanner:
             self.tarče = "exit"
         self.tarče = np.array(tarče)
 
-    def namesto(self, cilj, max_r=5):
+    def namesto(self, cilj, max_r=2):
         """pomik na merilno mesto meritve (cilj), loopi se zaključijo ko se približa cilju na max_r"""
         while True:
             p0 = self.kamera.req("loc")
@@ -502,6 +505,29 @@ class Scanner:
         """izračuna premik slike"""
         self.tarče = self.tarče+translation
 
+class Generator:
+    
+    def __init__(self,ch):
+        self.ch = ch
+        self.frekvenca=100000
+        self.cas=1/100
+        self.st_vzorcev=int(self.frekvenca*self.cas)
+        self.task = nidaqmx.Task()
+        self.task.ao_channels.add_ao_voltage_chan(self.ch)
+        self.task.timing.cfg_samp_clk_timing(self.frekvenca)
+        self.task.timing.cfg_samp_clk_timing(
+                self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS, samps_per_chan=self.st_vzorcev)
+        self.stream = AnalogSingleChannelWriter(self.task.out_stream, auto_start=False) 
+        
+        self.task.register_every_n_samples_transferred_from_buffer_event(self.st_vzorcev, self.callback)
+        
+        self.signal = 10*pyExSi.normal_random(self.st_vzorcev)
+        self.stream.write_many_sample(self.signal)
+
+   
+    def callback(self, task_idx, every_n_samples_event_type, num_of_samples, callback_data):
+        self.signal = 10*pyExSi.normal_random(self.st_vzorcev)
+        self.stream.write_many_sample(self.signal)
 
 class MLSK_GUI:
 
