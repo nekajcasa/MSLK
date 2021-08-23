@@ -1112,40 +1112,6 @@ class GUI_MSLK:
                 self.gumb_mesto_prejšnje["state"] = "normal"
                 self.gumb_mesto_nasljednje["state"] = "normal"
 
-
-
-
-
-
-
-
-
-
-
-        # # zamrzne se vse gumbe
-        # if self.data_loaded == True:
-        #     self.gumb_cikelj_prejšnji["state"] = "disabled"
-        #     self.gumb_cikelj_nasljednji["state"] = "disabled"
-        #     self.gumb_mesto_prejšnje["state"] = "disabled"
-        #     self.gumb_mesto_nasljednje["state"] = "disabled"
-        #     self.data_loaded = False
-
-        # # odmrzne se relavantne gumbe
-        # if self.prikazan_cikelj > 1 and self.prikazano_mesto > 1 and self.prikazan_cikelj<self.data_ciklov and self.prikazano_mesto<self.data_mest:
-        #     self.spremeni_stanje(self.gumb_cikelj_nasljednji)
-        #     self.spremeni_stanje(self.gumb_cikelj_prejšnji)
-        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
-        #     self.spremeni_stanje(self.gumb_mesto_prejšnje)
-        # elif self.prikazan_cikelj=self.data_ciklov and self.prikazano_mesto=self.data_mest:
-        #     self.spremeni_stanje(self.gumb_cikelj_prejšnji)
-        #     self.spremeni_stanje(self.gumb_mesto_prejšnje)
-        # elif self.prikazan_cikelj==1 and self.prikazano_mesto==1:
-        #     self.spremeni_stanje(self.gumb_cikelj_nasljednji)
-        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
-        # elif self.prikazano_mesto > 1:
-        #     self.spremeni_stanje(self.gumb_mesto_nasljednje)
-        # elif data
-
         self.data_loaded = True
         self.gumb_doloci_pole["state"] = "normal"
         self.stslabel.configure(text=f"Podatki pridobljeni, določiti je potrebno pole.")
