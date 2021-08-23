@@ -31,13 +31,17 @@ class GUI_MSLK:
         frame_info = tk.Frame(self.master, relief=tk.SUNKEN)
         frame_info.pack(fill=tk.X, side=tk.BOTTOM)
         self.stslabel = tk.Label(
-            frame_info, anchor=tk.W, text="Program priprvljen. Potrebno je vspostaviti povezavo s RPi")
+            frame_info, anchor=tk.W, text="Program priprvljen. Potrebno je vzpostaviti povezavo s RPi")
         self.stslabel.pack(side=tk.LEFT)
 
         self.progress = ttk.Progressbar(
             frame_info, orient=tk.HORIZONTAL, length=100,  mode='indeterminate')
 #_________________________________Load_data___________________________________________
-        self.backup = {"Ux": 2.7,
+        self.backup = {"slika/mask":True,
+                   "iso":100,
+                   "shutter speed":20000,
+                   "th": 175,  
+                   "Ux": 2.7,
                    "Uy": 2.0,
                    "Ukal": 0.3,
                    "Upomik": 0.3,
@@ -48,7 +52,7 @@ class GUI_MSLK:
                    "skripta": "Desktop/RPi_MSLK.py",
                    "ao0": "cDAQ10Mod1/ao0",
                    "ao1": "cDAQ10Mod1/ao1",
-                   "ao2": "cDAQ10Mod1/ao2",
+                   "ao2": "cDAQ10Mod4/ao0",
                    "ai0": "cDAQ10Mod3/ai0",
                    "ai1": "cDAQ10Mod3/ai1",
                    "ai2": "cDAQ10Mod3/ai3",
@@ -108,7 +112,7 @@ class GUI_MSLK:
         self.prekini = False
         self.na_tarči = -1
         self.append_to_file = False
-        self.povezava_vspostavljena_boolean = False
+        self.povezava_vzpostavljena_boolean = False
         self.data_freq = None
         self.data_frf = None
         self.data_loaded = False
@@ -136,26 +140,74 @@ class GUI_MSLK:
         tabControl.pack(expand=1, fill="both")
 #___________________________________tab_1_____________________________________________
     #povezava in tarče
+        frame_povezava_tarče = tk.Frame(self.tab1)
+        frame_povezava_tarče.grid(row=0,column=1)
+
         self.gumb_izbriši_zadnjo_tarčo = tk.Button(
-            self.tab1, text="Izbriši zadnjo tarčo", command=self.izbriši_zadnjo_tarčo)
-        self.gumb_izbriši_zadnjo_tarčo.grid(row=0, column=1)
+            frame_povezava_tarče, text="Izbriši zadnjo tarčo", command=self.izbriši_zadnjo_tarčo)
+        self.gumb_izbriši_zadnjo_tarčo.grid(row=0, column=0)
 
         self.gumb_izbriši_vse_tarče = tk.Button(
-            self.tab1, text="Izbriši vse tarče", command=self.izbriši_vse_tarče)
-        self.gumb_izbriši_vse_tarče.grid(row=0, column=2)
+            frame_povezava_tarče, text="Izbriši vse tarče", command=self.izbriši_vse_tarče)
+        self.gumb_izbriši_vse_tarče.grid(row=0, column=1)
 
-        self.gumb_vspostavi_povezavo = tk.Button(
-            self.tab1, text="Vspostavi povezavo", command=self.connect, bg="#89eb34")
-        self.gumb_vspostavi_povezavo.grid(row=1, column=1)
-        self.spremeni_stanje(self.gumb_vspostavi_povezavo)
+        self.gumb_vzpostavi_povezavo = tk.Button(
+            frame_povezava_tarče, text="Vzpostavi povezavo", command=self.connect, bg="#89eb34")
+        self.gumb_vzpostavi_povezavo.grid(row=1, column=0)
+        self.spremeni_stanje(self.gumb_vzpostavi_povezavo)
 
         self.gumb_prekini_povezavo = tk.Button(
-            self.tab1, text="Prekini povezavo", command=self.disconnect, bg="#ec123e")
-        self.gumb_prekini_povezavo.grid(row=1, column=2)
+            frame_povezava_tarče, text="Prekini povezavo", command=self.disconnect, bg="#ec123e")
+        self.gumb_prekini_povezavo.grid(row=1, column=1)
+
+        frame_nastavitve_slike = tk.Frame(self.tab1)
+        frame_nastavitve_slike.grid(row=2,column=1)
 
         self.gumb_pretakanje_slike = tk.Button(
-            self.tab1, text="Pretakanje slike \n start/stop", command=self.gh1, bg="red", fg="white")
-        self.gumb_pretakanje_slike.grid(row=2, column=1, columnspan=2)
+            frame_nastavitve_slike, text="Pretakanje slike \n start/stop", command=self.gh1, bg="red", fg="white")
+        self.gumb_pretakanje_slike.grid(row=0, column=0,rowspan=2)
+
+        self.var_img = tk.BooleanVar()
+        self.var_img.set(self.nastavitve["slika/mask"])
+        self.cb_slika = tk.Checkbutton(frame_nastavitve_slike, text='Slika', variable=self.var_img, command=self.izbran_img)
+        self.cb_slika.grid(row=0, column=1)
+
+        self.var_mask = tk.BooleanVar()
+        self.var_mask.set(not self.nastavitve["slika/mask"])
+        self.cb_mask = tk.Checkbutton(frame_nastavitve_slike, text='Mask', variable=self.var_mask, command=self.izbran_mask)
+        self.cb_mask.grid(row=1, column=1)
+
+        label_iso = tk.Label(frame_nastavitve_slike,text="ISO kamere")
+        label_iso.grid(row=2,column=0)
+
+        self.entry_iso = tk.Entry(frame_nastavitve_slike)
+        self.entry_iso.grid(row=2,column=1)
+        self.entry_iso.insert(0,self.nastavitve["iso"])
+
+        label_shutter_speed = tk.Label(frame_nastavitve_slike,text="Shutter speed (\u03BCs)")
+        label_shutter_speed.grid(row=3,column=0)
+
+        self.entry_shutter_speed = tk.Entry(frame_nastavitve_slike)
+        self.entry_shutter_speed.grid(row=3,column=1)
+        self.entry_shutter_speed.insert(0,self.nastavitve["shutter speed"])
+
+        label_threshold = tk.Label(frame_nastavitve_slike,text="Threshold")
+        label_threshold.grid(row=4,column=0)
+
+        self.entry_threshold = tk.Entry(frame_nastavitve_slike)
+        self.entry_threshold.grid(row=4,column=1)
+        self.entry_threshold.insert(0,self.nastavitve["th"])
+
+        gumb_posliji_nast_kamere = tk.Button(frame_nastavitve_slike,text="Pošlji nastavitve kamere",command=self.poslji_nast_kamere)
+        gumb_posliji_nast_kamere.grid(row=5,column=0,columnspan=2,sticky="EW")
+
+        gumn_rtd_slika = tk.Button(
+            master=frame_nastavitve_slike, text="Reset to default", command=self.rtd_nast_slike)
+        gumn_rtd_slika.grid(row=6, column=0,sticky="EW")
+
+        gumb_save_slika = tk.Button(
+            master=frame_nastavitve_slike, text="Save", command=self.save_nast_slike)
+        gumb_save_slika.grid(row=6, column=1,sticky="EW")
 
         self.gumb_ROI = tk.Button(
             self.tab1, text="ROI", command=self.ROI, bg="#88b5fc")#, fg="white")
@@ -370,7 +422,6 @@ class GUI_MSLK:
             master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve silomera/kladiva")
         frame_silomer_nastavitve.grid(row=1, column=1,sticky="NSEW")
 
-        self.nastavitve["start silomer/kladivo"]
         self.var_silomer = tk.BooleanVar()
         self.var_silomer.set(self.nastavitve["start silomer/kladivo"])
         self.cb_silomer = tk.Checkbutton(
@@ -753,20 +804,32 @@ class GUI_MSLK:
             frame_gumbi_tab3, text="Prekini meritev", command=self.prekini_meritev)
         self.gumb_prekini_meritev.grid(row=3, column=1)
 
+        frame_lastne = tk.Frame(self.tab3, relief=tk.RAISED, borderwidth=1)
+        frame_lastne.grid(row=1,column=2)
+
         self.gumb_doloci_pole = tk. Button(
-            frame_gumbi_tab3, text="Določi pole", command=self.doloci_pole)
-        self.gumb_doloci_pole.grid(row=4, column=0)
+            frame_lastne, text="Določi pole", command=self.doloci_pole)
+        self.gumb_doloci_pole.grid(row=0, column=0,columnspan=2)
         self.spremeni_stanje(self.gumb_doloci_pole)
 
+        label_st_lastnih=tk.Label(frame_lastne,text="Stevilo prikazanih lastnih oblik")
+        label_st_lastnih.grid(row=1,column=0)
+
+        self.entry_st_lastnih = tk.Entry(frame_lastne)
+        self.entry_st_lastnih.grid(row=1,column=1)
+        self.entry_st_lastnih.insert(0,"3")
+
         self.gumb_plotaj_lastne = tk. Button(
-            frame_gumbi_tab3, text="Lastne oblike", command=self.lastne_oblike_plot)
-        self.gumb_plotaj_lastne.grid(row=4, column=1)
+            frame_lastne, text="Lastne oblike", command=self.lastne_oblike_plot)
+        self.gumb_plotaj_lastne.grid(row=2, column=0,columnspan=2)
         self.spremeni_stanje(self.gumb_plotaj_lastne)
+
+
 
     # Loadanje in upravljanje s ploti
         frame_upravlanje_plotov_tab3 = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        frame_upravlanje_plotov_tab3.grid(row=1, column=2)
+        frame_upravlanje_plotov_tab3.grid(row=2, column=2)
 
         label_upravljanje_plotov = tk.Label(
             frame_upravlanje_plotov_tab3, text="Izbira podatkov")
@@ -825,6 +888,24 @@ class GUI_MSLK:
         self.gumb_mesto_nasljednje.grid(row=6, column=2)
         self.spremeni_stanje(self.gumb_mesto_nasljednje)
 
+        label_skala = tk.Label(frame_upravlanje_plotov_tab3,text="Upravljanje x osi FRF")
+        label_skala.grid(row=7,column=0,columnspan=3)
+
+        label_skala_do = tk.Label(frame_upravlanje_plotov_tab3,text="od")
+        label_skala_do.grid(row=8,column=0)
+
+        self.entry_skala_min = tk.Entry(frame_upravlanje_plotov_tab3)
+        self.entry_skala_min.grid(row=8,column=1)
+        self.entry_skala_min.insert(0,"0")
+
+        label_skala_do = tk.Label(frame_upravlanje_plotov_tab3,text="do")
+        label_skala_do.grid(row=9,column=0)
+
+        self.entry_skala_max = tk.Entry(frame_upravlanje_plotov_tab3)
+        self.entry_skala_max.grid(row=9,column=1,sticky="WE")
+        self.entry_skala_max.insert(0, int(float(self.variable.get())/5))
+
+
     #generiranje signalov
         # frame_generiranje_signalov_tab3 = tk.Frame(
         #     master=self.tab3, relief=tk.RAISED, borderwidth=1)
@@ -836,10 +917,10 @@ class GUI_MSLK:
         self.switch()
 # =================================Funkcije===========================================
     def connect(self):
-        """funkcija skrbi za vspostavitev povezave z RPi"""
+        """funkcija skrbi za vzpostavitev povezave z RPi"""
         def real_connect():
 
-            if self.povezava_vspostavljena_boolean == False:
+            if self.povezava_vzpostavljena_boolean == False:
                 self.stslabel.configure(text="Vpostavljanje povezave")
                 Pi = MSLK.RPi(hostname=self.vnos1.get(),
                               port=self.vnos2.get(),
@@ -858,30 +939,52 @@ class GUI_MSLK:
 
 
 
-                # vspostavitev povezave z RPi
+                # vzpostavitev povezave z RPi
                 self.scanner.kamera.connect()
                 # kalibracija laserske glave
                 self.kalibracija_laserja()
-                self.stslabel.configure(text="Povezava na RPi vspostavljena")
+                self.stslabel.configure(text="Povezava na RPi vzpostavljena")
 
                 self.image = self.scanner.kamera.req("img")
                 self.image = self.scanner.narisi_tarce(self.image, self.tarče)
                 self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
                 self.imgshow()
 
-                self.povezava_vspostavljena_boolean = True
+                self.povezava_vzpostavljena_boolean = True
                 self.switch()
         threading.Thread(target=real_connect).start()
 
     def disconnect(self):
-        """funkcija za prekinitev povezave z RPi"""
-        if self.povezava_vspostavljena_boolean == True:
+        """funkcija za prekinitev povezave z RPi in ponastvitev konstant"""
+        if self.povezava_vzpostavljena_boolean == True:
             self.scanner.kamera.disconnect()
             self.stslabel.configure(text="Povezava na RPi prekinjena")
-            self.povezava_vspostavljena_boolean = False
+            self.povezava_vzpostavljena_boolean = False
             self.switch()
         else:
             self.stslabel.configure(text="Povezava je že prekinjena")
+        
+        self.U_x = self.nastavitve["Ux"]
+        self.U_y = self.nastavitve["Uy"]
+        self.tarče = []
+        self.continuePlottingImg = False
+        self.prekini = False
+        self.na_tarči = -1
+        self.append_to_file = False
+        self.povezava_vzpostavljena_boolean = False
+        self.data_freq = None
+        self.data_frf = None
+        self.data_loaded = False
+        self.poli_določeni = False
+        self.prikazan_cikelj = 1
+        self.prikazano_mesto = 1
+        self.load_bar_stop = False
+        self.objek_je_mirn = False
+        self.serija0 = False
+        self.triger = False
+        self.tocke_ROI=-1
+        self.ROI_kordinate=[]
+        self.ena_metirev=True
 
     def generator_update(self):
         self.generator_signalov.freq_lower=int(self.entry_freq_lower.get())
@@ -1051,8 +1154,8 @@ class GUI_MSLK:
         """Odpre se novo okno v s pomočjo pyEMA kjer se določiko poli"""
         self.acc = pyEMA.Model(frf=self.data_frf[self.prikazan_cikelj-1],
                                freq=self.data_freq,
-                               lower=10,
-                               upper=float(self.variable.get())/5,
+                               lower=int(self.entry_skala_min.get()),
+                               upper=int(self.entry_skala_max.get()),
                                pol_order_high=60)
         self.acc.get_poles()
         self.stslabel.configure(text=f"Poli določeni, možno je plotanje lastnih oblik.")
@@ -1066,8 +1169,10 @@ class GUI_MSLK:
         #frf_rec, modal_const = acc.get_constants(whose_poles='own', FRF_ind='all')
         self.axes_lastne_oblike.cla()
         tarče=np.array(self.tarče)
-        print(len(self.acc.normal_mode()))
-        for i in range(5):
+        plotaj_st_lastnih=int(self.entry_st_lastnih.get())
+        if plotaj_st_lastnih>len(self.acc.normal_mode()):
+            plotaj_st_lastnih=len(self.acc.normal_mode())
+        for i in range(plotaj_st_lastnih):
             if len(self.tarče)!=len(self.acc.normal_mode()[:, i]):
                 self.axes_lastne_oblike.plot(self.acc.normal_mode()[:, i], label=f"{i+1}. lastna oblika")
             else:
@@ -1090,7 +1195,7 @@ class GUI_MSLK:
         """Funkcija zbira vse gumbe ki ob določenih dogodkih spremenijo
          stanje aktivno/ne aktnivo"""
         # tab1
-        self.spremeni_stanje(self.gumb_vspostavi_povezavo)
+        self.spremeni_stanje(self.gumb_vzpostavi_povezavo)
         self.spremeni_stanje(self.gumb_prekini_povezavo)
         self.spremeni_stanje(self.gumb_izbriši_zadnjo_tarčo)
         self.spremeni_stanje(self.gumb_izbriši_vse_tarče)
@@ -1112,6 +1217,18 @@ class GUI_MSLK:
             self.spremeni_stanje(self.gumb_doloci_pole)
         if self.poli_določeni == True:
             self.spremeni_stanje(self.gumb_plotaj_lastne)
+
+    def izbran_img(self):
+        if self.var_img.get() == True:
+            self.var_mask.set(False)
+        else:
+            self.var_mask.set(True)
+
+    def izbran_mask(self):
+        if self.var_mask.get() == True:
+            self.var_img.set(False)
+        else:
+            self.var_img.set(True)
 
     def izbrano_kladivo(self):
         if self.var_kladivo.get() == True:
@@ -1193,7 +1310,25 @@ class GUI_MSLK:
             self.entry_okno_h_value.delete(0,"end")
             self.entry_okno_h_value.insert(0,self.nastavitve["value h silomer"])
             self.variable_typ.set(self.types[self.nastavitve["typ silomer"]])
-            
+
+    def poslji_nast_kamere(self):
+        iso = int(self.entry_iso.get())
+        if iso<0:
+            iso=0
+        iso = str(iso)
+        shs = int(self.entry_shutter_speed.get())
+        if shs<1000:
+            shs=1000
+        shs = str(shs)
+        thr = int(self.entry_threshold.get())
+        if thr<0:
+            thr=0
+        elif thr>255:
+            thr=255
+        thr = str(thr)
+        nst = "nst,"+iso+":"+shs+":"+thr
+        self.scanner.kamera.pi_kamera.send(bytes(nst, "utf-8"))
+
     def laser_Ux_gor(self):
         """Sprememba poločaja zrcala na podlagi napetosti za smer x,
          POVEČANJE vrednosti"""
@@ -1320,7 +1455,10 @@ class GUI_MSLK:
     def zajemanje_slike(self):
         """Konstantno zajemanje slike, funkcija je aktiviran preko threading"""
         while self.continuePlottingImg:
-            self.image = self.scanner.kamera.req("img")
+            if self.var_img.get():
+                self.image = self.scanner.kamera.req("img")
+            else:
+                self.image = self.scanner.kamera.req("msk")
             self.image = self.scanner.narisi_tarce(self.image, self.tarče)
             self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
             self.imgshow()
@@ -1342,6 +1480,21 @@ class GUI_MSLK:
         except:
             self.stslabel.configure(
                 text="NAPKA! Nastavitve NISO sharanjene.")
+
+    def rtd_nast_slike(self):
+        self.entry_iso.delete(0,"end")
+        self.entry_iso.insert(0,self.backup["iso"])
+        self.entry_shutter_speed.delete(0,"end")
+        self.entry_shutter_speed.insert(0,self.backup["shutter speed"])
+        self.entry_threshold.delete(0,"end")
+        self.entry_threshold.insert(0,self.backup["th"])
+        self.save_nast_slike()
+
+    def save_nast_slike(self):
+        self.nastavitve["iso"] = int(self.entry_iso.get())
+        self.nastavitve["shutter speed"] = int(self.entry_shutter_speed.get())
+        self.nastavitve["th"] = int(self.entry_threshold.get())
+        self.shrani_nastavitve()
 
     def save_kaibracija(self):
         self.nastavitve["Ux"] = self.U_x
@@ -1527,43 +1680,48 @@ class GUI_MSLK:
 
     def on_click(self, event):
         """Funkcija ki opazuje in določa kaj se zgodi ko kliknemo na sliko"""
-        if self.continuePlottingImg==True:
-            self.continuePlottingImg=False
-        if event.inaxes is not None:
-            tarča = [event.xdata, event.ydata]
-            if self.tocke_ROI==-1:
-                self.tarče.append(tarča)
-                self.image = self.scanner.kamera.req("img")
-                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
-                self.imgshow()
-                self.stslabel.configure(text=f"Prikaz slike. Dodana tarča {len(self.tarče)}.")
+        if self.continuePlottingImg==False:
+            if event.inaxes is not None:
+                tarča = [event.xdata, event.ydata]
+                if self.tocke_ROI==-1:
+                    self.tarče.append(tarča)
+                    self.image = self.scanner.kamera.req("img")
+                    self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                    self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
+                    self.imgshow()
+                    self.stslabel.configure(text=f"Prikaz slike. Dodana tarča {len(self.tarče)}.")
+                else:
+                    self.ROI_kordinate.append(tarča)
+                    self.stslabel.configure(text=f"Prikaz slike. Dodana ROI točka {len(self.ROI_kordinate)}.")
+                    if len(self.ROI_kordinate)==2:
+                        self.ROI_kordinate=[[int(self.ROI_kordinate[0][0]),int(self.ROI_kordinate[0][1])],
+                                            [int(self.ROI_kordinate[1][0]),int(self.ROI_kordinate[1][1])]]
+                        x1=str(min(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
+                        y1=str(min(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
+                        x2=str(max(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
+                        y2=str(max(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
+                        ROI="roi,"+x1+":"+y1+":"+x2+":"+y2
+                        print(ROI)
+                        self.scanner.kamera.pi_kamera.send(bytes(ROI, "utf-8"))
+                        self.tocke_ROI=-1
+                    self.image = self.scanner.kamera.req("img")
+                    self.image = self.scanner.narisi_tarce(self.image, self.tarče)
+                    self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
+                    self.imgshow()
             else:
-                self.ROI_kordinate.append(tarča)
-                self.stslabel.configure(text=f"Prikaz slike. Dodana ROI točka {len(self.ROI_kordinate)}.")
-                if len(self.ROI_kordinate)==2:
-                    self.ROI_kordinate=[[int(self.ROI_kordinate[0][0]),int(self.ROI_kordinate[0][1])],
-                                        [int(self.ROI_kordinate[1][0]),int(self.ROI_kordinate[1][1])]]
-                    x1=str(min(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
-                    y1=str(min(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
-                    x2=str(max(self.ROI_kordinate[0][0],self.ROI_kordinate[1][0]))
-                    y2=str(max(self.ROI_kordinate[0][1],self.ROI_kordinate[1][1]))
-                    ROI="roi,"+x1+":"+y1+":"+x2+":"+y2
-                    print(ROI)
-                    self.scanner.kamera.pi_kamera.send(bytes(ROI, "utf-8"))
-                    self.tocke_ROI=-1
-                self.image = self.scanner.kamera.req("img")
-                self.image = self.scanner.narisi_tarce(self.image, self.tarče)
-                self.image = self.scanner.narisi_ROI(self.image, self.ROI_kordinate)
-                self.imgshow()
+                self.stslabel.configure(
+                    text="Clicked ouside axes bounds but inside plot window")
         else:
             self.stslabel.configure(
-                text="Clicked ouside axes bounds but inside plot window")
+                    text="Za dolločitev tarče je potrebno izklopiti pretakanje slike")
 
     def imgshow(self):
         """Funkcija skrbi za prikaz slike pridobljene iz RPi"""
         self.ax.cla()
-        self.ax.imshow(self.image[:, :, ::-1])
+        if len(np.shape(self.image))>2:
+            self.ax.imshow(self.image[:, :, ::-1])
+        else:
+            self.ax.imshow(self.image,cmap='Greys_r')
         self.canvas.draw()
 
     def izbriši_zadnjo_tarčo(self):
@@ -1669,7 +1827,7 @@ class GUI_MSLK:
         self.axes_FRF[0].set_ylabel("(mm/s)/N")
         self.axes_FRF[0].set_yscale("log")
         self.axes_FRF[0].grid()
-        self.axes_FRF[0].set_xlim(0,float(self.variable.get())/5)
+        self.axes_FRF[0].set_xlim(int(self.entry_skala_min.get()),int(self.entry_skala_max.get()))
         # fazni zamik
         self.axes_FRF[1].cla()
         self.axes_FRF[1].plot(f, np.arctan2(
@@ -1679,7 +1837,7 @@ class GUI_MSLK:
         self.axes_FRF[1].set_ylabel("kot [rad]")
         # self.axes_FRF[1].set_ylim(-np.pi/2,np.pi/2)
         self.axes_FRF[1].grid()
-        self.axes_FRF[1].set_xlim(0,float(self.variable.get())/5)
+        self.axes_FRF[1].set_xlim(int(self.entry_skala_min.get()),int(self.entry_skala_max.get()))
 
         self.graph_FRF.draw()
 
@@ -1708,6 +1866,7 @@ class GUI_MSLK:
             self.okno_h=self.okno_h+":"+self.entry_okno_h_value.get()
 
     def meritev_trenutnega_mesta(self):
+        self.prekini = False
         if self.var_kladivo.get() == True:
             self.meritev_trenutnega_mesta_kladivo()
         else:
@@ -1754,7 +1913,8 @@ class GUI_MSLK:
 
             if self.prekini:
                 self.stslabel.configure(text="Meritev prekinjena")
-                self.prekini = False
+                if self.ena_metirev:
+                    self.prekini = False
                 break
         
         self.update_grafe(self.t, self.exc, self.h,
@@ -1768,7 +1928,6 @@ class GUI_MSLK:
         if self.ena_metirev and self.var_generator.get():
             self.generator_signalov.task.close()
             
-
     def meritev_trenutnega_mesta_kladivo(self):
         self.pridobi_zahteve_merjenja()
         self.scanner.meritev.continuous_bool = True
@@ -1892,7 +2051,8 @@ class GUI_MSLK:
 
             if self.prekini:
                 self.stslabel.configure(text="Meritev prekinjena")
-                self.prekini = False
+                if self.ena_metirev:
+                    self.prekini = False
                 break
 
         #počaka se še da se objek umiri predno se premakne na naslednjo pozicijo
@@ -1918,6 +2078,7 @@ class GUI_MSLK:
     def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
+
         if self.var_silomer.get() and self.var_generator.get():
             self.generator_update()
             self.generator_signalov.pripravi_signal()

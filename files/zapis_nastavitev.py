@@ -9,7 +9,11 @@ Program za generiranje datoteke z nastavitvami.
 """
 import pickle
 
-dictionary_data = {"Ux": 2.7,
+dictionary_data = {"slika/mask":True,
+                   "iso":100,
+                   "shutter speed":20000,
+                   "th": 175,  
+                   "Ux": 2.7,
                    "Uy": 2.0,
                    "Ukal": 0.3,
                    "Upomik": 0.3,

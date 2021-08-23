@@ -211,10 +211,10 @@ class Camera:
             print(data)
             data = np.float64(data.split(','))
             return data
-        elif dtyp == "img":
+        elif dtyp == "img" or dtyp== "msk":
             ime, data = self.image_hub.recv_image()
             self.image_hub.send_reply(b'OK')
-            print(ime)
+            #print(ime)
             return data
         else:
             print("napačen zahtevek, opcije \"loc\" ali \"img\"")
@@ -518,19 +518,19 @@ class Generator:
         self.N=int(self.cas*self.frekvenca)
         self.st_vzorcev=int(self.frekvenca*self.cas)
 
+         
+        #klicnaje funkcije za nove signale
+        
+    def pripravi_signal(self):
         self.task = nidaqmx.Task()
         self.task.ao_channels.add_ao_voltage_chan(self.ch)
         self.task.timing.cfg_samp_clk_timing(self.frekvenca)
         self.task.timing.cfg_samp_clk_timing(
                 self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS, samps_per_chan=self.st_vzorcev)
-        self.stream = AnalogSingleChannelWriter(self.task.out_stream, auto_start=False) 
-        #klicnaje funkcije za nove signale
-        
-    def pripravi_signal(self):
+        self.stream = AnalogSingleChannelWriter(self.task.out_stream, auto_start=False)
         #generacija PSD
         self.naredi_PSD()
         self.x = es.random_gaussian(self.N, self.PSD, self.frekvenca)
-        print(self.x)
         self.stream.write_many_sample(self.x)
         self.task.register_every_n_samples_transferred_from_buffer_event(self.st_vzorcev, self.callback)
 
