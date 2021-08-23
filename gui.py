@@ -38,51 +38,55 @@ class GUI_MSLK:
             frame_info, orient=tk.HORIZONTAL, length=100,  mode='indeterminate')
 #_________________________________Load_data___________________________________________
         self.backup = {"Ux": 2.7,
-                       "Uy": 1.8,
-                       "Ukal": 0.3,
-                       "Upomik": 0.3,
-                       "hostname": "pi-kamera",
-                       "port": 22,
-                       "username": "pi",
-                       "password": "pi",
-                       "skripta": "Desktop/RPi_MSLK.py",
-                       "ao0": "cDAQ10Mod1/ao0",
-                       "ao1": "cDAQ10Mod1/ao1",
-                       "ai0": "cDAQ10Mod3/ai0",
-                       "ai1": "cDAQ10Mod3/ai1",
-                       "ai2": "cDAQ10Mod3/ai3",
-                       "U_max": 4,
-                       "U_min": -4,
-                       "las_v": 20.0,
-                       "zamik laser": 0.00124,
-                       "start silomer/kladivo": True,
-                       "f kladivo":2.273,
-                       "f1": 4.034,
-                       "f2": 9.923,
-                       "kladivo k. mirnosti":0.1,
-                       "trigger value":3.0,
-                       "pred trigger":0.01,
-                       "osnovna frekvenca silomer": 13107200,
-                       "frekvenca vzorčenja silomer": 4,
-                       "čas silomer": 1,
-                       "vzorcev za povprečenje silomer": 5,
-                       "okno exc silomer": 2,
-                       "value exc silomer":0.1,
-                       "okno h silomer": 2,
-                       "value h silomer": 0.1,
-                       "typ silomer": 2,
-                       "osnovna frekvenca kladivo": 13107200,
-                       "frekvenca vzorčenja kladivo": 4,
-                       "čas kladivo": 1,
-                       "vzorcev za povprečenje kladivo": 1,
-                       "okno exc kladivo": 3,
-                       "value exc kladivo": 0.2,
-                       "okno h kladivo": 2,
-                       "value h kladivo":0.1,
-                       "typ kladivo": 2,
-                       "file_name": "meritev",
-                       "dir": "C:",
-                       "število ciklov": 1}
+                   "Uy": 2.0,
+                   "Ukal": 0.3,
+                   "Upomik": 0.3,
+                   "hostname": "pi-kamera",
+                   "port": 22,
+                   "username": "pi",
+                   "password": "pi",
+                   "skripta": "Desktop/RPi_MSLK.py",
+                   "ao0": "cDAQ10Mod1/ao0",
+                   "ao1": "cDAQ10Mod1/ao1",
+                   "ao2": "cDAQ10Mod1/ao2",
+                   "ai0": "cDAQ10Mod3/ai0",
+                   "ai1": "cDAQ10Mod3/ai1",
+                   "ai2": "cDAQ10Mod3/ai3",
+                   "U_max": 4,
+                   "U_min": -4,
+                   "las_v": 100.0,
+                   "zamik laser": 0.00124,
+                   "start silomer/kladivo": True,
+                   "f kladivo":2.273,
+                   "f1": 4.034,
+                   "f2": 9.923,
+                   "kladivo k. mirnosti":0.1,
+                   "trigger value":3.0,
+                   "pred trigger":0.01,
+                   "osnovna frekvenca silomer": 13107200,
+                   "frekvenca vzorčenja silomer": 0,
+                   "čas silomer": 1,
+                   "vzorcev za povprečenje silomer": 5,
+                   "okno exc silomer": 2,
+                   "value exc silomer":0.1,
+                   "okno h silomer": 2,
+                   "value h silomer": 0.1,
+                   "typ silomer": 2,
+                   "osnovna frekvenca kladivo": 13107200,
+                   "frekvenca vzorčenja kladivo": 0,
+                   "čas kladivo": 1,
+                   "vzorcev za povprečenje kladivo": 1,
+                   "okno exc kladivo": 3,
+                   "value exc kladivo": 0.2,
+                   "okno h kladivo": 4,
+                   "value h kladivo":0.1,
+                   "typ kladivo": 2,
+                   "file_name": "meritev",
+                   "dir": "C:",
+                   "gen_on":True,
+                   "low_f":50,
+                   "upper_f":5000,
+                   "število ciklov": 1}
 
         self.nastavitve_file = "files/nastavitve.pkl"
         try:
@@ -592,6 +596,39 @@ class GUI_MSLK:
             frame_zajem_nastavitve, text="Save",command=self.save_zajem)
         gumb_seve_zajem.grid(row=14, column=1)
 
+    #nastavitve generatorja
+        frame_generator_nastavitve = tk.LabelFrame(
+            master=self.tab2, relief=tk.RAISED, borderwidth=1,text="Nastavitve generatorja")
+        frame_generator_nastavitve.grid(row=0, column=3,sticky="NSEW")
+        self.var_generator = tk.BooleanVar()
+        self.var_generator.set(self.nastavitve["gen_on"])
+        self.cb_generator = tk.Checkbutton(
+            frame_generator_nastavitve, text='Generiraj signal', variable=self.var_generator)
+        self.cb_generator.grid(row=1, column=0, columnspan=2)
+        #self.cb_generator.select()
+
+        label_freq_lower = tk.Label(frame_generator_nastavitve,text="Spodnja frekvenca vzbujanja")
+        label_freq_lower.grid(row=2,column=0)
+
+        self.entry_freq_lower = tk.Entry(frame_generator_nastavitve)
+        self.entry_freq_lower.grid(row=2,column=1)
+        self.entry_freq_lower.insert(0, self.nastavitve["low_f"])
+
+        label_freq_upper = tk.Label(frame_generator_nastavitve,text="Zgornja frekvenca vzbujanja")
+        label_freq_upper.grid(row=3,column=0)
+
+        self.entry_freq_upper = tk.Entry(frame_generator_nastavitve)
+        self.entry_freq_upper.grid(row=3,column=1)
+        self.entry_freq_upper.insert(0, self.nastavitve["upper_f"])
+
+        gumb_rtd_generator = tk.Button(
+            frame_generator_nastavitve, text="Reset to default",command=self.rtd_generator)
+        gumb_rtd_generator.grid(row=4, column=0)
+
+        gumb_seve_generator = tk.Button(
+            frame_generator_nastavitve, text="Save",command=self.save_generator)
+        gumb_seve_generator.grid(row=4, column=1)
+
         self.urejanje_silomer_kladivo()
 #___________________________________tab_3_____________________________________________
 
@@ -816,7 +853,8 @@ class GUI_MSLK:
                 položaj_zrcal = np.array([self.U_x, self.U_y])
                 self.scanner = MSLK.Scanner(
                     pi_kamera, laser, meritev, položaj_zrcal, None)
-                self.generator_signalov = MSLK.Generator(self.vnos3_ni.get())
+                if self.var_generator.get():
+                    self.generator_signalov = MSLK.Generator(self.vnos3_ni.get(),int(self.entry_freq_lower.get()),int(self.entry_freq_upper.get()))
 
 
 
@@ -844,6 +882,10 @@ class GUI_MSLK:
             self.switch()
         else:
             self.stslabel.configure(text="Povezava je že prekinjena")
+
+    def generator_update(self):
+        self.generator_signalov.freq_lower=int(self.entry_freq_lower.get())
+        self.generator_signalov.freq_upper=int(self.entry_freq_upper.get())
 
     def ROI(self):
         self.tocke_ROI=0
@@ -1367,6 +1409,20 @@ class GUI_MSLK:
 
         self.shrani_nastavitve()
 
+    def rtd_generator(self):
+        self.entry_freq_lower.delete(0,"end")
+        self.entry_freq_lower.insert(0,self.backup["low_f"])
+        self.entry_freq_upper.delete(0,"end")
+        self.entry_freq_upper.insert(0,self.backup["upper_f"])
+        self.var_silomer.set(self.backup["gen_on"])
+        self.save_generator()
+
+    def save_generator(self):
+        self.nastavitve["gen_f"]=self.var_generator.get()
+        self.nastavitve["low_f"]=int(self.entry_freq_lower.get())
+        self.nastavitve["upper_f"]=int(self.entry_freq_upper.get())
+        self.shrani_nastavitve()
+
     def rtd_zajem(self):
         if self.var_silomer.get():
             self.entry_osnovna_frekvenca.delete(0,"end")
@@ -1666,7 +1722,9 @@ class GUI_MSLK:
 
     def meritev_s_silomerom(self):
         """Funkcija za izvajanje meritve, aktiviran je preko threading"""
-        if self.ena_metirev:
+        if self.ena_metirev and self.var_generator.get():
+            self.generator_update()
+            self.generator_signalov.pripravi_signal()
             self.generator_signalov.task.start()
             time.sleep(5)
         toc = time.time()
@@ -1707,8 +1765,9 @@ class GUI_MSLK:
             if self.append_to_file == False:
                 file = self.entry_path.get()+"/"+self.entry_ime_datoteke.get()
                 np.save(file, self.frf.get_FRF())
-        if self.ena_metirev:
+        if self.ena_metirev and self.var_generator.get():
             self.generator_signalov.task.close()
+            
 
     def meritev_trenutnega_mesta_kladivo(self):
         self.pridobi_zahteve_merjenja()
@@ -1859,7 +1918,9 @@ class GUI_MSLK:
     def real_zacni_meritev(self):
         """Funkcija naredi določeno število ciklov meritev, laser se pomakne do označene terče kjer se 
         izvede meritev"""
-        if self.var_silomer.get():
+        if self.var_silomer.get() and self.var_generator.get():
+            self.generator_update()
+            self.generator_signalov.pripravi_signal()
             self.generator_signalov.task.start()
             time.sleep(5)
             self.ena_metirev=False
@@ -1926,7 +1987,7 @@ class GUI_MSLK:
             np.save(file_opend, (self.data_freq,
                                  self.data_frf, self.data_exc, self.data_h))
             self.append_to_file = False
-        if self.var_silomer.get():
+        if self.var_silomer.get() and self.var_generator.get():
             self.generator_signalov.task.close()
             self.ena_metirev=True
 

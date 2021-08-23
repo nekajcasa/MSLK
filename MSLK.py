@@ -22,7 +22,7 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.figure import Figure
 import threading
 from nidaqmx.stream_writers import (AnalogSingleChannelWriter)
-import pyExSi
+import pyExSi as es
 
 
 class Meritev_demo:
@@ -507,27 +507,43 @@ class Scanner:
 
 class Generator:
     
-    def __init__(self,ch):
+    def __init__(self,ch,freq_lower,freq_upper):
         self.ch = ch
-        self.frekvenca=100000
-        self.cas=1/100
+        self.freq_lower = freq_lower # PSD lower frequency limit  [Hz]
+        self.freq_upper = freq_upper # PSD upper frequency limit [Hz]
+        self.frekvenca=100000# sampling frequency [Hz]
+        # self.N = int(1e5) # number of data points of time signal
+        # self.buffer_size = self.N
+        self.cas=100 #s
+        self.N=int(self.cas*self.frekvenca)
         self.st_vzorcev=int(self.frekvenca*self.cas)
+
         self.task = nidaqmx.Task()
         self.task.ao_channels.add_ao_voltage_chan(self.ch)
         self.task.timing.cfg_samp_clk_timing(self.frekvenca)
         self.task.timing.cfg_samp_clk_timing(
                 self.frekvenca, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS, samps_per_chan=self.st_vzorcev)
         self.stream = AnalogSingleChannelWriter(self.task.out_stream, auto_start=False) 
+        #klicnaje funkcije za nove signale
         
+    def pripravi_signal(self):
+        #generacija PSD
+        self.naredi_PSD()
+        self.x = es.random_gaussian(self.N, self.PSD, self.frekvenca)
+        print(self.x)
+        self.stream.write_many_sample(self.x)
         self.task.register_every_n_samples_transferred_from_buffer_event(self.st_vzorcev, self.callback)
-        
-        self.signal = 10*pyExSi.normal_random(self.st_vzorcev)
-        self.stream.write_many_sample(self.signal)
 
-   
+    def naredi_PSD(self):
+        t = np.arange(0,self.N)/self.frekvenca # time vector
+        M = self.N // 2 + 1 # number of data points of frequency vector
+        freq = np.arange(0, M/2-1, 1) * self.frekvenca / self.N # frequency vector
+        self.PSD = es.get_psd(freq, self.freq_lower, self.freq_upper) # one-sided flat-shaped PSD   
+
     def callback(self, task_idx, every_n_samples_event_type, num_of_samples, callback_data):
-        self.signal = 10*pyExSi.normal_random(self.st_vzorcev)
-        self.stream.write_many_sample(self.signal)
+        self.x = es.random_gaussian(self.N, self.PSD, self.frekvenca)
+        self.stream.write_many_sample(self.x)
+
 
 class MLSK_GUI:
 

@@ -20,7 +20,7 @@ dictionary_data = {"Ux": 2.7,
                    "skripta": "Desktop/RPi_MSLK.py",
                    "ao0": "cDAQ10Mod1/ao0",
                    "ao1": "cDAQ10Mod1/ao1",
-                   "ao2": "cDAQ10Mod1/ao2",
+                   "ao2": "cDAQ10Mod4/ao0",
                    "ai0": "cDAQ10Mod3/ai0",
                    "ai1": "cDAQ10Mod3/ai1",
                    "ai2": "cDAQ10Mod3/ai3",
@@ -55,6 +55,9 @@ dictionary_data = {"Ux": 2.7,
                    "typ kladivo": 2,
                    "file_name": "meritev",
                    "dir": "C:",
+                   "gen_on":True,
+                   "low_f":50,
+                   "upper_f":5000,
                    "število ciklov": 1}
 
 file = open("nastavitve.pkl", "wb")
