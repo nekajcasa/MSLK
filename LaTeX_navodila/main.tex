@@ -1,0 +1,143 @@
+% !TeX spellcheck = si_SI
+% Predloga za pisanje zaključnih nalog, LADISK 2015-2018, pripravila Martin Česnik, Janko Slavič
+% Zadnja verzija na: https://github.com/ladisk/latex-templates
+\documentclass[12pt,a4paper,oneside,fleqn]{book}
+
+% use quite a lot of packages
+\usepackage{gensymb} % za ukaz \degree
+\usepackage{booktabs}
+\usepackage[a-3u]{pdfx}
+\usepackage{amsfonts,amssymb,amsmath}
+\usepackage{enumerate}
+\usepackage[section]{placeins}
+\usepackage{float}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{notoccite}
+\usepackage{fancyhdr}
+\usepackage{epstopdf}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{epstopdf}
+\usepackage{hyperref}
+\usepackage{ifoddpage}
+\usepackage{tocloft}
+\usepackage{titlesec}
+\usepackage{pdfpages}
+\usepackage{nameref}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{icomma}
+\usepackage{cite}
+\usepackage[numbib]{tocbibind}
+\usepackage[left=30mm,
+right=25mm,
+top=30mm,
+bottom=25mm]{geometry}
+\usepackage{xcolor,soul}
+\sethlcolor{lightgray}
+
+
+
+%paragraph settings
+\setlength\parindent{0pt}
+\setlength{\parskip}{1.5ex plus 0.5ex minus 0.5ex}
+
+% set equation environment indentation
+\setlength{\mathindent}{0.5cm}%
+
+% set itemize environment whitespacing and left margin
+\setlist[itemize]{noitemsep,nolistsep, leftmargin=*}
+
+% set table and figure captions
+\captionsetup[table]{skip=10pt,singlelinecheck=false}
+\captionsetup[figure]{justification=centering}
+
+% set tablename to Preglednica
+\AtBeginDocument{%
+	\renewcommand\tablename{Preglednica}
+}
+
+% command for multiline cell in table
+\newcommand{\minitab}[2][l]{\begin{tabular}{#1}#2\end{tabular}}
+
+
+% set section and tableofcontents depth
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\def\labelitemi{--}
+
+%  accordingly format a chapter definition
+\titleformat{\chapter}[display]
+{\bfseries}{}{0pt}{\Huge\thechapter\quad}
+
+% set fancy_nohead fancy header
+\fancypagestyle{fancy_nohead}{
+	\fancyfoot[RO]{\thepage}
+	\fancyhead{}
+	\renewcommand{\headrulewidth}{0pt}
+	\chead{}
+	\cfoot{}
+}
+
+% assign no_header
+\assignpagestyle{\chapter}{fancy_nohead}
+
+% table, fig and eq formatting
+\renewcommand{\thetable}{\arabic{chapter}.\arabic{table}}
+\renewcommand{\thefigure}{\arabic{chapter}.\arabic{figure}}
+\renewcommand{\theequation}{\arabic{chapter}.\arabic{equation}}
+
+\renewcommand\cftchapdotsep{\cftdotsep}  % adds leader dots from chapter titles to page numbers
+
+
+\begin{document}
+	
+	
+	\pagenumbering{roman}
+	\input{prveStrani/prveStrani}
+%	\newpage
+%	\input{oznake/oznake}
+	
+	
+	\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+	\fancyhf{}
+	\fancyhead[RO]{\nouppercase{\leftmark}}
+	
+	\fancyfoot[RO]{\thepage}
+	\renewcommand{\headrulewidth}{0.1mm}
+	\renewcommand{\footrulewidth}{0mm}
+	\cfoot{}
+	\setlength{\headheight}{14.5pt}
+	
+	
+	\pagenumbering{arabic}
+	\input{uvod/uvod}
+	\newpage
+	
+	\input{setup/setup}
+	\newpage
+	
+	\input{GUI vodič/GUI_vodič}
+	\newpage
+	
+	\input{ZT/znane_težave}
+	\newpage
+	
+
+%	\bibliographystyle{fs_zakljucne_naloge}
+	
+%	\renewcommand{\thechapter}{}
+%	\bibliography{References}
+%
+%	\newpage
+	
+%	\input{dodatki/dodatek}
+%	\newpage
+%	\thispagestyle{empty}
+%	\mbox{}
+\end{document} 
