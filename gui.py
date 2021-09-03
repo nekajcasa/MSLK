@@ -824,8 +824,6 @@ class GUI_MSLK:
         self.gumb_plotaj_lastne.grid(row=2, column=0,columnspan=2)
         self.spremeni_stanje(self.gumb_plotaj_lastne)
 
-
-
     # Loadanje in upravljanje s ploti
         frame_upravlanje_plotov_tab3 = tk.Frame(
             master=self.tab3, relief=tk.RAISED, borderwidth=1)
@@ -904,15 +902,6 @@ class GUI_MSLK:
         self.entry_skala_max = tk.Entry(frame_upravlanje_plotov_tab3)
         self.entry_skala_max.grid(row=9,column=1,sticky="WE")
         self.entry_skala_max.insert(0, int(float(self.variable.get())/5))
-
-
-    #generiranje signalov
-        # frame_generiranje_signalov_tab3 = tk.Frame(
-        #     master=self.tab3, relief=tk.RAISED, borderwidth=1)
-        # frame_generiranje_signalov_tab3.grid(row=2, column=2)
-
-        # label_generiranje_signalov = tk.Label(frame_generiranje_signalov_tab3,text="Generiranje signalov")
-        # label_generiranje_signalov.grid(row=0,column=0,columnspan=2)
 
         self.switch()
 # =================================Funkcije===========================================

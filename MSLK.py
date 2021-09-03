@@ -366,11 +366,11 @@ class Scanner:
         while True:
             p0 = self.kamera.req("loc")
             while p0.any()==None:
-                self.laser.premik_volt(self.položaj_zrcal_origen[0],self.položaj_zrcal_origen[1])
+                self.laser.premik_volt(self.laser.položaj_zrcal_origen[0],self.laser.položaj_zrcal_origen[1])
                 p0 = self.kamera.req("loc")
                 if p0.any()==None:
-                    self.položaj_zrcal_origen[0]+=0.05
-                    self.položaj_zrcal_origen[1]+=0.05
+                    self.laser.položaj_zrcal_origen[0]+=0.05
+                    self.laser.položaj_zrcal_origen[1]+=0.05
             delta_px = cilj-p0
             razdalja_do_cilja = np.sqrt(delta_px[0]**2+delta_px[1]**2)
             print(f"Trenutna lokacija: {p0}\t Cilj: {cilj}\t Razdalja: {razdalja_do_cilja}")
@@ -824,7 +824,7 @@ if __name__ == '__main__':
              skripta="Desktop/laserV3.py")
 
     pi_kamera = Camera(Pi)
-    laser = LaserHead(pi_kamera,ch1="cDAQ10Mod1/ao0", ch2="cDAQ10Mod1/ao1")
+    laser = LaserHead(pi_kamera,ch1="cDAQ1Mod1/ao0", ch2="cDAQ1Mod1/ao1")
     meritev = Meritev_demo(5)
     # določitev začetnega poločaja zrcal
     položaj_zrcal = np.array([1.7, 1.7])
